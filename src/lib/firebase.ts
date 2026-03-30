@@ -15,7 +15,11 @@ const firebaseConfig = {
 const firestoreDatabaseId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID;
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firestoreDatabaseId);
+
+// Utilise la base par défaut si l'ID est invalide ou égal à "(default)"
+export const db = firestoreDatabaseId && firestoreDatabaseId !== '(default)' 
+  ? getFirestore(app, firestoreDatabaseId) 
+  : getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
