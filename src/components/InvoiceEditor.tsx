@@ -168,11 +168,11 @@ export default function InvoiceEditor({ onClose, type = 'invoice', initialData, 
           >
             {/* Header */}
             <div className="flex justify-between items-start mb-8">
-              <div className="w-32">
+              <div className="w-48">
                 <img 
                   src="/logo.jpg" 
                   alt="Les jardins bourdonnants" 
-                  className="w-24 h-24 object-contain" 
+                  className="w-40 h-40 object-contain" 
                   referrerPolicy="no-referrer"
                   crossOrigin="anonymous"
                   onError={(e) => {
@@ -182,7 +182,7 @@ export default function InvoiceEditor({ onClose, type = 'invoice', initialData, 
                 />
               </div>
               <div className="flex-1 text-center">
-                <h1 className="text-3xl font-bold mb-2">
+                <h1 className="text-3xl font-bold mb-2 pt-4">
                   {documentTitleUpper} « <input 
                     type="text" 
                     value={invoiceNumber} 
@@ -194,7 +194,7 @@ export default function InvoiceEditor({ onClose, type = 'invoice', initialData, 
                   Association Les Jardins Bourdonnants 🐝
                 </h2>
               </div>
-              <div className="w-32"></div>
+              <div className="w-48"></div>
             </div>
 
             {/* Association Info */}
