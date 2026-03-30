@@ -1,0 +1,266 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && request.auth.token.email == "briceamiel20@gmail.com";
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() &&
+        (
+          isSuperAdmin() ||
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'])
+        );
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return hasRequiredFields(['uid', 'email', 'role', 'createdAt']) &&
+             data.uid is string && data.uid.size() > 0 && data.uid.size() < 100 &&
+             data.email is string && isValidEmail(data.email) && data.email.size() < 150 &&
+             data.role in ['admin', 'superadmin', 'client'] &&
+             data.createdAt is timestamp &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() < 20)) &&
+             (!('clientType' in data) || (data.clientType is string && data.clientType.size() < 50)) &&
+             (!('lastLogin' in data) || (data.lastLogin is timestamp));
+    }
+
+    function isValidParcel(data) {
+      return hasRequiredFields(['name', 'type', 'status', 'pricePerMonth', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.type in ['garden', 'apiary'] &&
+             data.status in ['available', 'occupied', 'maintenance'] &&
+             data.pricePerMonth is number && data.pricePerMonth >= 0 &&
+             data.createdAt is timestamp &&
+             (!('size' in data) || (data.size is number && data.size > 0));
+    }
+
+    function isValidReservation(data) {
+      return hasRequiredFields(['startDate', 'endDate', 'status', 'createdAt']) &&
+             data.startDate is timestamp &&
+             data.endDate is timestamp &&
+             data.status in ['pending', 'approved', 'rejected', 'cancelled', 'confirmed', 'en attente de validation', 'validé'] &&
+             data.createdAt is timestamp &&
+             (!('userId' in data) || (data.userId is string)) &&
+             (!('parcelId' in data) || (data.parcelId is string)) &&
+             (!('fullName' in data) || (data.fullName is string && data.fullName.size() < 100)) &&
+             (!('email' in data) || (data.email is string && data.email.size() < 150)) &&
+             (!('description' in data) || (data.description is string && data.description.size() < 1000)) &&
+             (!('locationChoice' in data) || (data.locationChoice is string)) &&
+             (!('type' in data) || (data.type is string)) &&
+             (!('details' in data) || (data.details is map));
+    }
+
+    function isValidQuote(data) {
+      return hasRequiredFields(['amount', 'status', 'createdAt']) &&
+             data.amount is number && data.amount >= 0 &&
+             data.status in ['pending', 'accepted', 'rejected', 'paid', 'unpaid', 'en attente de validation', 'validé', 'facturé'] &&
+             data.createdAt is timestamp &&
+             (!('userId' in data) || (data.userId is string)) &&
+             (!('reservationId' in data) || (data.reservationId is string)) &&
+             (!('quoteId' in data) || (data.quoteId is string)) &&
+             (!('fullName' in data) || (data.fullName is string && data.fullName.size() < 100)) &&
+             (!('email' in data) || (data.email is string && data.email.size() < 150)) &&
+             (!('description' in data) || (data.description is string && data.description.size() < 1000)) &&
+             (!('locationChoice' in data) || (data.locationChoice is string)) &&
+             (!('details' in data) || (data.details is map));
+    }
+
+    function isValidEvent(data) {
+      return hasRequiredFields(['title', 'startDate', 'endDate', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 150 &&
+             data.startDate is timestamp &&
+             data.endDate is timestamp &&
+             data.createdAt is timestamp &&
+             (!('status' in data) || (data.status in ['en attente de validation', 'validé', 'reporté'])) &&
+             (!('type' in data) || (data.type is string)) &&
+             (!('createdBy' in data) || (data.createdBy is string)) &&
+             (!('description' in data) || (data.description is string && data.description.size() < 1000)) &&
+             (!('location' in data) || (data.location is string && data.location.size() < 200));
+    }
+
+    function isValidMember(data) {
+      return hasRequiredFields(['fullName', 'createdAt']) &&
+             data.fullName is string && data.fullName.size() > 0 && data.fullName.size() < 150 &&
+             data.createdAt is timestamp &&
+             (!('email' in data) || (data.email is string && data.email.size() < 150)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() < 50)) &&
+             (!('address' in data) || (data.address is string && data.address.size() < 300)) &&
+             (!('isUpToDate' in data) || (data.isUpToDate is bool)) &&
+             (!('role' in data) || data.role == null || (data.role is string && data.role.size() < 50)) &&
+             (!('title' in data) || data.title == null || (data.title is string && data.title.size() < 50)) &&
+             (!('activity' in data) || data.activity == null || (data.activity is string && data.activity.size() < 50));
+    }
+
+    function isValidPurchaseRequest(data) {
+      return hasRequiredFields(['title', 'description', 'estimatedAmount', 'status', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 150 &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 1000 &&
+             data.estimatedAmount is number && data.estimatedAmount >= 0 &&
+             data.status in ['pending', 'approved', 'rejected'] &&
+             data.createdAt is timestamp &&
+             (!('quantity' in data) || data.quantity is number && data.quantity > 0) &&
+             (!('price' in data) || data.price is number && data.price >= 0) &&
+             (!('link' in data) || data.link == null || (data.link is string && data.link.size() < 500));
+    }
+
+    function isValidPlot(data) {
+      return hasRequiredFields(['plotNumber', 'status', 'createdAt']) &&
+             data.plotNumber is string && data.plotNumber.size() > 0 && data.plotNumber.size() < 100 &&
+             data.status in ['disponible', 'occupe', 'maintenance'] &&
+             data.createdAt is timestamp &&
+             (!('assignedMemberId' in data) || data.assignedMemberId == null || (data.assignedMemberId is string && data.assignedMemberId.size() < 100)) &&
+             (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() < 1000)) &&
+             (!('updatedAt' in data) || data.updatedAt == null || data.updatedAt is timestamp);
+    }
+
+    function isValidBoardMember(data) {
+      return hasRequiredFields(['role', 'createdAt']) &&
+             (!('firstName' in data) || data.firstName == null || (data.firstName is string && data.firstName.size() < 100)) &&
+             (!('lastName' in data) || data.lastName == null || (data.lastName is string && data.lastName.size() < 100)) &&
+             (!('email' in data) || data.email == null || data.email == '' || (data.email is string && isValidEmail(data.email))) &&
+             data.role in ['Secrétaire', 'Trésorier(e)', 'Président(e)', 'Membre du bureau'] &&
+             data.createdAt is timestamp &&
+             (!('phone' in data) || data.phone == null || (data.phone is string && data.phone.size() <= 20));
+    }
+
+    function isValidAdminDocument(data) {
+      return hasRequiredFields(['title', 'type', 'fileUrl', 'fileName', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.type in ['ag_report', 'statutes', 'internal_rules'] &&
+             data.fileUrl is string && isValidUrl(data.fileUrl) &&
+             data.fileName is string && data.fileName.size() > 0 && data.fileName.size() < 200 &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == 'client') || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /members/{memberId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidMember(request.resource.data);
+      allow update: if isAdmin() && isValidMember(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /parcels/{parcelId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidParcel(request.resource.data);
+      allow update: if isAdmin() && isValidParcel(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /reservations/{reservationId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if (isAuthenticated() && isValidReservation(request.resource.data) && 
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.status == 'pending') || (isAdmin() && isValidReservation(request.resource.data));
+      allow update: if isAuthenticated() && isValidReservation(request.resource.data) &&
+                    ((resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId && request.resource.data.status in ['pending', 'cancelled']) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /quotes/{quoteId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if (isAuthenticated() && isValidQuote(request.resource.data) && request.resource.data.userId == request.auth.uid) || (isAdmin() && isValidQuote(request.resource.data));
+      allow update: if isAuthenticated() && isValidQuote(request.resource.data) &&
+                    ((resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId && request.resource.data.amount == resource.data.amount && request.resource.data.status in ['pending', 'accepted', 'rejected']) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() && isValidQuote(request.resource.data);
+      allow update: if isAdmin() && isValidQuote(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /purchaseRequests/{requestId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidPurchaseRequest(request.resource.data);
+      allow update: if isAdmin() && isValidPurchaseRequest(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /plots/{plotId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidPlot(request.resource.data);
+      allow update: if isAdmin() && isValidPlot(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidEvent(request.resource.data);
+      allow update: if isAdmin() && isValidEvent(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /boardMembers/{memberId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidBoardMember(request.resource.data);
+      allow update: if isAdmin() && isValidBoardMember(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /adminDocuments/{documentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidAdminDocument(request.resource.data);
+      allow update: if isAdmin() && isValidAdminDocument(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}

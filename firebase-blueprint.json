@@ -1,0 +1,148 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application (admin or client)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "client"] },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "Parcel": {
+      "title": "Parcel",
+      "description": "A garden or apiary parcel available for reservation",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["garden", "apiary"] },
+        "status": { "type": "string", "enum": ["available", "occupied", "maintenance"] },
+        "size": { "type": "number" },
+        "pricePerMonth": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "type", "status", "pricePerMonth", "createdAt"]
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "description": "A reservation request for a parcel",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "parcelId": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "parcelId", "startDate", "endDate", "status", "createdAt"]
+    },
+    "Quote": {
+      "title": "Quote",
+      "description": "A quote generated for a reservation",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "reservationId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected", "paid"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "reservationId", "amount", "status", "createdAt"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "An event in the agenda",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "location": { "type": "string" },
+        "type": { "type": "string", "enum": ["formation", "distribution", "meeting", "other"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "date", "type", "createdAt"]
+    },
+    "Plot": {
+      "title": "Plot",
+      "description": "A garden plot",
+      "type": "object",
+      "properties": {
+        "plotNumber": { "type": "string" },
+        "status": { "type": "string", "enum": ["disponible", "occupe", "maintenance"] },
+        "assignedMemberId": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["plotNumber", "status", "createdAt"]
+    },
+    "BoardMember": {
+      "title": "BoardMember",
+      "description": "A member of the association's board",
+      "type": "object",
+      "properties": {
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["Secrétaire", "Trésorier(e)", "Président(e)", "Membre du bureau"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "createdAt"]
+    },
+    "AdminDocument": {
+      "title": "AdminDocument",
+      "description": "An administrative document like general assembly report, statutes, or internal rules",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["ag_report", "statutes", "internal_rules"] },
+        "fileUrl": { "type": "string" },
+        "fileName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "type", "fileUrl", "fileName", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Users collection"
+    },
+    "/parcels/{parcelId}": {
+      "schema": { "$ref": "#/entities/Parcel" },
+      "description": "Parcels collection"
+    },
+    "/reservations/{reservationId}": {
+      "schema": { "$ref": "#/entities/Reservation" },
+      "description": "Reservations collection"
+    },
+    "/quotes/{quoteId}": {
+      "schema": { "$ref": "#/entities/Quote" },
+      "description": "Quotes collection"
+    },
+    "/events/{eventId}": {
+      "schema": { "$ref": "#/entities/Event" },
+      "description": "Events collection"
+    },
+    "/plots/{plotId}": {
+      "schema": { "$ref": "#/entities/Plot" },
+      "description": "Plots collection"
+    },
+    "/boardMembers/{memberId}": {
+      "schema": { "$ref": "#/entities/BoardMember" },
+      "description": "Board members collection"
+    },
+    "/adminDocuments/{documentId}": {
+      "schema": { "$ref": "#/entities/AdminDocument" },
+      "description": "Administrative documents collection"
+    }
+  }
+}

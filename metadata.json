@@ -1,0 +1,5 @@
+{
+  "name": "Les jardins bourdonnants",
+  "description": "Mini SaaS pour la gestion des jardins et ruchers partagés de la Sainte-Baume. Réservations, devis, factures et agenda.",
+  "requestFramePermissions": []
+}
