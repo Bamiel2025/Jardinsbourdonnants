@@ -116,8 +116,16 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="bg-surface-container-lowest p-8 rounded-3xl shadow-xl max-w-2xl w-full text-center">
-        <div className="w-16 h-16 bg-secondary-container rounded-2xl flex items-center justify-center text-on-secondary-container mx-auto mb-6">
-          <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>eco</span>
+        <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center overflow-hidden shadow-lg border border-outline-variant/20 mx-auto mb-6 transition-transform hover:scale-105">
+          <img 
+            src="/logo.jpg" 
+            alt="Les jardins bourdonnants" 
+            className="w-full h-full object-contain p-2"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "https://placehold.co/200x200/ffffff/065f46?text=Logo";
+            }}
+          />
         </div>
         <h1 className="text-3xl font-bold text-primary font-headline mb-2">Les jardins bourdonnants</h1>
         <p className="text-on-surface-variant mb-8">Sélectionnez votre profil pour vous connecter :</p>
