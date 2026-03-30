@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { addDoc, collection, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 export default function ClientPortal() {
   const { userData, logout } = useAuth();
+  const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState<'reservation' | 'monitoring'>('reservation');
   const [reservationType, setReservationType] = useState<'adhesion' | 'animation'>('adhesion');
@@ -98,7 +100,16 @@ export default function ClientPortal() {
           <h1 className="text-xl font-bold font-headline">Les jardins bourdonnants</h1>
         </div>
         <div className="flex items-center gap-4">
-          <span className="font-medium">{userData?.displayName}</span>
+          <span className="font-medium hidden sm:block">{userData?.displayName}</span>
+          {(userData?.role === 'admin' || userData?.role === 'superadmin') && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">dashboard</span>
+              Tableau de bord
+            </button>
+          )}
           <button onClick={logout} className="bg-primary-fixed text-on-primary-fixed px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary-fixed/90 transition-colors cursor-pointer">
             Déconnexion
           </button>
