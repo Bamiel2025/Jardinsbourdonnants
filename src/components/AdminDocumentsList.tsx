@@ -32,6 +32,20 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
     file: null as File | null
   });
 
+  // STATIC DOCUMENTS CONFIGURATION
+  // This allows the user to just drop files in public/documents/administration/
+  const staticDocuments: Record<string, AdminDocument[]> = {
+    'ag_report': [
+      { id: 'static-ag', title: 'PV Assemblée Générale (Fichier Local)', type: 'ag_report', fileUrl: '/documents/administration/ag_report.pdf', fileName: 'ag_report.pdf', createdAt: null }
+    ],
+    'statutes': [
+      { id: 'static-statutes', title: 'Statuts (Fichier Local)', type: 'statutes', fileUrl: '/documents/administration/statutes.pdf', fileName: 'statutes.pdf', createdAt: null }
+    ],
+    'internal_rules': [
+      { id: 'static-rules', title: 'Règlement Intérieur (Fichier Local)', type: 'internal_rules', fileUrl: '/documents/administration/internal_rules.pdf', fileName: 'internal_rules.pdf', createdAt: null }
+    ]
+  };
+
   useEffect(() => {
     const q = query(
       collection(db, 'adminDocuments'),
@@ -40,15 +54,19 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
     );
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docsData = snapshot.docs.map(doc => ({
+      const dbDocs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as AdminDocument[];
       
-      setDocuments(docsData);
+      // Merge with static documents of this type
+      const relevantStatic = staticDocuments[type] || [];
+      setDocuments([...dbDocs, ...relevantStatic]);
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'adminDocuments');
+      console.warn("Firestore error (normal if no DB yet):", error.message);
+      // Fallback only to static if DB fails or is empty
+      setDocuments(staticDocuments[type] || []);
       setLoading(false);
     });
 
@@ -133,6 +151,11 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
   };
 
   const handleDelete = async (document: AdminDocument) => {
+    if (document.id.startsWith('static-')) {
+      alert("Ce document est un fichier 'statique' déposé manuellement dans GitHub. Pour le supprimer, vous devez supprimer le fichier physique dans le dossier 'public/documents/administration/' et mettre à jour le code.");
+      return;
+    }
+
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) {
       try {
         // 1. Delete from Storage
@@ -262,7 +285,24 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-6 flex gap-3 text-amber-800 text-sm">
+              <span className="material-symbols-outlined text-amber-500">info</span>
+              <div>
+                <p className="font-bold mb-1">Alternative "Glisser-Déposer" (Gratuit)</p>
+                <p>Comme Firebase Storage n'est pas activé, vous pouvez aussi simplement déposer vos PDF dans le dossier du projet :</p>
+                <code className="block mt-1 bg-white/50 p-1 rounded font-mono">public/documents/administration/</code>
+                <p className="mt-1">Nommez-les précisément : <br/>
+                  <span className="font-bold">ag_report.pdf</span> (Compte-rendu), <br/>
+                  <span className="font-bold">statutes.pdf</span> (Statuts), <br/>
+                  <span className="font-bold">internal_rules.pdf</span> (Règlement).
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4 opacity-50 pointer-events-none">
+              <div className="text-center p-4 bg-slate-100 rounded-lg border border-slate-200">
+                <p className="text-slate-500 italic text-sm">L'importation directe via cette fenêtre nécessite l'activation de Firebase Storage (payant).</p>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Titre du document *</label>
                 <input
