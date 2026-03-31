@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, deleteDoc, doc as firestoreDoc, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -75,32 +75,23 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
     setUploadProgress(0);
 
     try {
-      // 1. Upload file to Storage
+      // 1. Check storage config
+      if (!storage.app.options.storageBucket) {
+        console.error("Firebase Storage Bucket is not configured!");
+        throw new Error("La configuration du stockage Firebase est manquante (Storage Bucket).");
+      }
+
+      // 2. Upload file to Storage
       const fileExtension = formData.file.name.split('.').pop();
       const fileName = `${type}_${Date.now()}.${fileExtension}`;
       const storageRef = ref(storage, `admin_documents/${type}/${fileName}`);
       
-      const uploadTask = uploadBytesResumable(storageRef, formData.file);
-      setUploadTaskRef(uploadTask);
-
-      // Wait for upload using a proper Promise wrapper
-      await new Promise<void>((resolve, reject) => {
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadProgress(progress);
-          },
-          (error) => {
-            // Reject the promise on error
-            reject(error);
-          },
-          () => {
-            // Resolve the promise on completion
-            resolve();
-          }
-        );
-      });
+      console.log(`Starting upload to: admin_documents/${type}/${fileName}`);
+      
+      // Simple Promise-based upload
+      await uploadBytes(storageRef, formData.file);
+      
+      console.log("Upload successful, getting download URL...");
 
       // 2. Get download URL
       const downloadURL = await getDownloadURL(storageRef);
@@ -115,12 +106,10 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
       });
       
       setIsUploading(false);
-      setUploadTaskRef(null);
       closeModal();
     } catch (error: any) {
       console.error("Upload/Firestore error:", error);
       setIsUploading(false);
-      setUploadTaskRef(null);
       
       if (error?.code === 'storage/canceled') {
         // Upload was canceled by the user, do nothing
