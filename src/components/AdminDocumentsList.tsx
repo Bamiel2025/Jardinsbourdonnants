@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, deleteDoc, doc as firestoreDoc, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { format } from 'date-fns';
@@ -83,22 +83,24 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
       const uploadTask = uploadBytesResumable(storageRef, formData.file);
       setUploadTaskRef(uploadTask);
 
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (error) => {
-          console.error("Upload error:", error);
-          if (error.code !== 'storage/canceled') {
-            setIsUploading(false);
-            alert(`Erreur d'importation : ${error.message}`);
+      // Wait for upload using a proper Promise wrapper
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgress(progress);
+          },
+          (error) => {
+            // Reject the promise on error
+            reject(error);
+          },
+          () => {
+            // Resolve the promise on completion
+            resolve();
           }
-        }
-      );
-
-      // Wait for upload to complete
-      await uploadTask;
+        );
+      });
 
       // 2. Get download URL
       const downloadURL = await getDownloadURL(storageRef);
@@ -141,13 +143,12 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
     }
   };
 
-  const handleDelete = async (doc: AdminDocument) => {
+  const handleDelete = async (document: AdminDocument) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) {
       try {
         // 1. Delete from Storage
-        // Extract file path from URL (this is a simplified approach, might need refinement depending on exact URL structure)
         try {
-          const url = new URL(doc.fileUrl);
+          const url = new URL(document.fileUrl);
           const pathRegex = /o\/(.+?)\?/;
           const match = url.pathname.match(pathRegex);
           if (match && match[1]) {
@@ -161,9 +162,9 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
         }
 
         // 2. Delete from Firestore
-        await deleteDoc(doc(db, 'adminDocuments', doc.id));
+        await deleteDoc(firestoreDoc(db, 'adminDocuments', document.id));
       } catch (error) {
-        handleFirestoreError(error, OperationType.DELETE, `adminDocuments/${doc.id}`);
+        handleFirestoreError(error, OperationType.DELETE, `adminDocuments/${document.id}`);
         alert('Erreur lors de la suppression.');
       }
     }
@@ -212,22 +213,22 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
             </tr>
           </thead>
           <tbody>
-            {documents.map((doc) => (
-              <tr key={doc.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
+            {documents.map((adminDoc) => (
+              <tr key={adminDoc.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
                 <td className="p-4 font-medium text-slate-800 flex items-center gap-3">
                   <span className="material-symbols-outlined text-red-500">picture_as_pdf</span>
-                  {doc.title}
+                  {adminDoc.title}
                 </td>
-                <td className="p-4 text-slate-500 text-sm truncate max-w-[200px]" title={doc.fileName}>
-                  {doc.fileName}
+                <td className="p-4 text-slate-500 text-sm truncate max-w-[200px]" title={adminDoc.fileName}>
+                  {adminDoc.fileName}
                 </td>
                 <td className="p-4 text-slate-500 text-sm">
-                  {doc.createdAt ? format(doc.createdAt.toDate(), 'dd MMMM yyyy', { locale: fr }) : '...'}
+                  {adminDoc.createdAt ? format(adminDoc.createdAt.toDate(), 'dd MMMM yyyy', { locale: fr }) : '...'}
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <a 
-                      href={doc.fileUrl} 
+                      href={adminDoc.fileUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-slate-400 hover:text-blue-600 bg-white rounded-full p-2 shadow-sm border border-slate-200 transition-colors"
@@ -236,7 +237,7 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
                       <span className="material-symbols-outlined text-sm">visibility</span>
                     </a>
                     <button 
-                      onClick={() => handleDelete(doc)} 
+                      onClick={() => handleDelete(adminDoc)} 
                       className="text-slate-400 hover:text-red-600 bg-white rounded-full p-2 shadow-sm border border-slate-200 transition-colors"
                       title="Supprimer"
                     >
