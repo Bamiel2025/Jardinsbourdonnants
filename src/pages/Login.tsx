@@ -134,13 +134,19 @@ export default function Login() {
         finalRole = 'admin';
       }
 
-      await setDoc(doc(db, 'users', currentUser.uid), {
+      // Before updating, get existing previous login
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      const previousLogin = userDocSnap.exists() ? userDocSnap.data().lastLogin : serverTimestamp();
+
+      await setDoc(userDocRef, {
         email: currentUser.email,
         displayName: currentUser.displayName,
         photoURL: currentUser.photoURL,
         role: finalRole,
         clientType: (selectedProfile !== 'admin' && selectedProfile !== 'superadmin') ? selectedProfile : 'public',
-        lastLogin: serverTimestamp()
+        lastLogin: serverTimestamp(),
+        previousLogin: previousLogin
       }, { merge: true });
 
       // After updating the document, force navigation

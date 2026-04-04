@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [toastMessage, setToastMessage] = useState('');
   const [isMobileView, setIsMobileView] = useState(false);
 
@@ -29,6 +30,80 @@ export default function AdminDashboard() {
     setToastMessage(message);
     setTimeout(() => setToastMessage(''), 3000);
   };
+
+  useEffect(() => {
+    if (!userData?.previousLogin) return;
+
+    const prevLogin = userData.previousLogin.toDate();
+    const notificationItems: any[] = [];
+
+    const updateNotifications = (newItems: any[], category: string) => {
+      setNotifications(prev => {
+        const filtered = prev.filter(item => item.category !== category);
+        const combined = [...filtered, ...newItems].sort((a, b) => b.timestamp - a.timestamp);
+        return combined;
+      });
+    };
+
+    // 1. New Reservations
+    const unsubRes = onSnapshot(query(collection(db, 'reservations'), where('createdAt', '>', prevLogin)), (snap) => {
+      const items = snap.docs.map(doc => ({
+        id: doc.id,
+        category: 'reservations',
+        title: `Nouvelle réservation : ${doc.data().fullName}`,
+        timestamp: doc.data().createdAt?.toDate() || new Date(),
+        icon: 'event_seat',
+        color: 'text-blue-600'
+      }));
+      updateNotifications(items, 'reservations');
+    });
+
+    // 2. New Members
+    const unsubMem = onSnapshot(query(collection(db, 'members'), where('createdAt', '>', prevLogin)), (snap) => {
+      const items = snap.docs.map(doc => ({
+        id: doc.id,
+        category: 'members',
+        title: `Nouveau membre : ${doc.data().fullName}`,
+        timestamp: doc.data().createdAt?.toDate() || new Date(),
+        icon: 'person_add',
+        color: 'text-emerald-600'
+      }));
+      updateNotifications(items, 'members');
+    });
+
+    // 3. New Purchase Requests
+    const unsubPur = onSnapshot(query(collection(db, 'purchaseRequests'), where('createdAt', '>', prevLogin)), (snap) => {
+      const items = snap.docs.map(doc => ({
+        id: doc.id,
+        category: 'purchases',
+        title: `Demande d'achat : ${doc.data().title}`,
+        timestamp: doc.data().createdAt?.toDate() || new Date(),
+        icon: 'shopping_basket',
+        color: 'text-amber-600'
+      }));
+      updateNotifications(items, 'purchases');
+    });
+
+    // 4. New Quotes
+    const unsubQuo = onSnapshot(query(collection(db, 'quotes'), where('createdAt', '>', prevLogin)), (snap) => {
+      const items = snap.docs.map(doc => ({
+        id: doc.id,
+        category: 'quotes',
+        title: `Nouveau devis : ${doc.data().clientName || 'Client'}`,
+        timestamp: doc.data().createdAt?.toDate() || new Date(),
+        icon: 'receipt_long',
+        color: 'text-purple-600'
+      }));
+      updateNotifications(items, 'quotes');
+    });
+
+    return () => {
+      unsubRes();
+      unsubMem();
+      unsubPur();
+      unsubQuo();
+    };
+  }, [userData?.previousLogin]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -180,7 +255,11 @@ export default function AdminDashboard() {
                 className="p-2 text-emerald-900 dark:text-emerald-50 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-full transition-all relative cursor-pointer"
               >
                 <span className="material-symbols-outlined">notifications</span>
-                <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+                {notifications.length > 0 && (
+                  <span className="absolute top-0 right-0 w-5 h-5 bg-error text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-slate-900 animate-in zoom-in">
+                    {notifications.length}
+                  </span>
+                )}
               </button>
               
               {showNotifications && (
@@ -192,9 +271,33 @@ export default function AdminDashboard() {
                     </button>
                   </div>
                   <div className="max-h-96 overflow-y-auto p-2">
-                    <div className="p-4 text-center text-on-surface-variant text-sm">
-                      Aucune nouvelle notification
-                    </div>
+                    {notifications.length > 0 ? (
+                      <div className="space-y-1">
+                        {notifications.map((notif, idx) => (
+                          <div 
+                            key={`${notif.category}-${notif.id}`} 
+                            onClick={() => {
+                              setActiveTab(notif.category === 'purchases' ? 'purchases' : notif.category === 'reservations' ? 'reservations' : notif.category === 'members' ? 'members' : 'quotes');
+                              setShowNotifications(false);
+                            }}
+                            className="p-3 bg-surface-container rounded-xl flex items-start gap-3 hover:bg-surface-container-high transition-colors cursor-pointer"
+                          >
+                            <span className={`material-symbols-outlined ${notif.color} mt-0.5`}>{notif.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-on-surface leading-tight mb-0.5">{notif.title}</p>
+                              <p className="text-[10px] text-on-surface-variant">
+                                {format(notif.timestamp, 'dd MMM HH:mm', { locale: fr })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center text-on-surface-variant flex flex-col items-center gap-2">
+                        <span className="material-symbols-outlined text-4xl opacity-20">notifications_off</span>
+                        <p className="text-sm italic">Aucune nouvelle notification depuis votre dernière connexion.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
