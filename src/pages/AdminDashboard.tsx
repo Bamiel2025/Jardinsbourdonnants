@@ -78,7 +78,9 @@ export default function AdminDashboard() {
               />
             </div>
             <div className="text-center">
-              <p className="text-xs text-emerald-100/50 uppercase tracking-widest font-bold">Admin Console</p>
+              <p className="text-xs text-emerald-100/50 uppercase tracking-widest font-bold">
+                {userData?.role === 'client' ? 'Espace Adhérent' : 'Admin Console'}
+              </p>
             </div>
           </div>
           <nav className="space-y-1">
@@ -118,22 +120,29 @@ export default function AdminDashboard() {
               <span className="material-symbols-outlined">monitor_weight</span>
               <span>Monitoring Ruches</span>
             </button>
-            <button onClick={() => setActiveTab('administration')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'administration' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
-              <span className="material-symbols-outlined">admin_panel_settings</span>
-              <span>Administration</span>
-            </button>
             {userData?.role === 'superadmin' && (
-              <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
-                <span className="material-symbols-outlined">settings</span>
-                <span>Paramètres</span>
-              </button>
+              <>
+                <button onClick={() => setActiveTab('administration')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'administration' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
+                  <span className="material-symbols-outlined">admin_panel_settings</span>
+                  <span>Administration</span>
+                </button>
+                <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
+                  <span className="material-symbols-outlined">settings</span>
+                  <span>Paramètres</span>
+                </button>
+              </>
             )}
           </nav>
           <div className="mt-12">
-            <button onClick={() => setIsCreateModalOpen(true)} className="w-full bg-amber-400 text-primary py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-amber-950/20 cursor-pointer">
-              <span className="material-symbols-outlined">add</span>
-              Nouveau
-            </button>
+            {userData?.role !== 'client' && (
+              <button 
+                onClick={() => setIsCreateModalOpen(true)} 
+                className="w-full bg-amber-400 text-primary py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-amber-950/20 cursor-pointer"
+              >
+                <span className="material-symbols-outlined">add</span>
+                Nouveau
+              </button>
+            )}
           </div>
         </div>
         <div className="mt-auto p-8 pt-0 border-t border-emerald-800/30">
@@ -203,18 +212,13 @@ export default function AdminDashboard() {
               <span className="material-symbols-outlined">settings</span>
             </button>
             <div className="h-8 w-px bg-outline-variant/30 mx-2"></div>
-            <button
-              onClick={() => navigate('/portal')}
-              className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-900 dark:text-emerald-50 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-base">person</span>
-              Mon Espace
-            </button>
             <div className="h-8 w-px bg-outline-variant/30 mx-2"></div>
             <div className="flex items-center gap-3 pl-2">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-on-surface">{userData?.displayName || 'Admin'}</p>
-                <p className="text-[10px] text-on-surface-variant font-medium uppercase tracking-tight">Gardien du jardin</p>
+                <p className="text-sm font-bold text-on-surface">{userData?.displayName || 'Utilisateur'}</p>
+                <p className="text-[10px] text-on-surface-variant font-medium uppercase tracking-tight">
+                  {userData?.role === 'superadmin' ? 'Super Admin' : userData?.role === 'admin' ? 'Administrateur' : 'Adhérent'}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-bold border-2 border-primary-fixed">
                 {userData?.displayName?.charAt(0) || 'A'}
@@ -257,9 +261,11 @@ export default function AdminDashboard() {
       </main>
 
       {/* Floating Action Button - Contextual */}
-      <button onClick={() => setIsCreateModalOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full shadow-2xl flex items-center justify-center group active:scale-90 transition-all z-50 cursor-pointer">
-        <span className="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform duration-300">add</span>
-      </button>
+      {userData?.role !== 'client' && (
+        <button onClick={() => setIsCreateModalOpen(true)} className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full shadow-2xl flex items-center justify-center group active:scale-90 transition-all z-50 cursor-pointer">
+          <span className="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform duration-300">add</span>
+        </button>
+      )}
 
       {/* Create Modal */}
       <CreateModal 

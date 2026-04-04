@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, orderBy, updateDoc, doc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import InvoiceEditor, { InvoiceData } from './InvoiceEditor';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ReservationsList() {
+  const { userData } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -111,7 +113,7 @@ export default function ReservationsList() {
                 <th className="p-4 font-bold">Participants</th>
                 <th className="p-4 font-bold">Description</th>
                 <th className="p-4 font-bold">Statut</th>
-                <th className="p-4 font-bold text-right">Actions</th>
+                {userData?.role !== 'client' && <th className="p-4 font-bold text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/20">
@@ -139,38 +141,40 @@ export default function ReservationsList() {
                       {item.status || 'en attente de validation'}
                     </span>
                   </td>
-                  <td className="p-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button 
-                        onClick={() => handleGenerateQuote(item)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Générer un devis"
-                      >
-                        <span className="material-symbols-outlined text-sm">request_quote</span>
-                      </button>
-                      <button 
-                        onClick={() => updateStatus(item.id, 'en attente de validation')}
-                        className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                        title="Mettre en attente"
-                      >
-                        <span className="material-symbols-outlined text-sm">schedule</span>
-                      </button>
-                      <button 
-                        onClick={() => updateStatus(item.id, 'validé')}
-                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                        title="Valider"
-                      >
-                        <span className="material-symbols-outlined text-sm">check_circle</span>
-                      </button>
-                      <button 
-                        onClick={() => setItemToDelete(item.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Supprimer"
-                      >
-                        <span className="material-symbols-outlined text-sm">delete</span>
-                      </button>
-                    </div>
-                  </td>
+                  {userData?.role !== 'client' && (
+                    <td className="p-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => handleGenerateQuote(item)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Générer un devis"
+                        >
+                          <span className="material-symbols-outlined text-sm">request_quote</span>
+                        </button>
+                        <button 
+                          onClick={() => updateStatus(item.id, 'en attente de validation')}
+                          className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                          title="Mettre en attente"
+                        >
+                          <span className="material-symbols-outlined text-sm">schedule</span>
+                        </button>
+                        <button 
+                          onClick={() => updateStatus(item.id, 'validé')}
+                          className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          title="Valider"
+                        >
+                          <span className="material-symbols-outlined text-sm">check_circle</span>
+                        </button>
+                        <button 
+                          onClick={() => setItemToDelete(item.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Supprimer"
+                        >
+                          <span className="material-symbols-outlined text-sm">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
               {items.length === 0 && (

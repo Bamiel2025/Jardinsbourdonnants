@@ -3,8 +3,10 @@ import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, update
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function PurchaseRequests() {
+  const { userData } = useAuth();
   const [requests, setRequests] = useState<any[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
@@ -96,31 +98,33 @@ export default function PurchaseRequests() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-4 border-t border-outline-variant/20">
-                <div className="flex gap-2">
+              {userData?.role !== 'client' && (
+                <div className="flex justify-between items-center pt-4 border-t border-outline-variant/20">
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleStatusChange(request.id, 'approved')}
+                      className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                      title="Valider"
+                    >
+                      <span className="material-symbols-outlined">check_circle</span>
+                    </button>
+                    <button 
+                      onClick={() => handleStatusChange(request.id, 'rejected')}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Refuser"
+                    >
+                      <span className="material-symbols-outlined">cancel</span>
+                    </button>
+                  </div>
                   <button 
-                    onClick={() => handleStatusChange(request.id, 'approved')}
-                    className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                    title="Valider"
+                    onClick={() => setRequestToDelete(request.id)}
+                    className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+                    title="Supprimer"
                   >
-                    <span className="material-symbols-outlined">check_circle</span>
-                  </button>
-                  <button 
-                    onClick={() => handleStatusChange(request.id, 'rejected')}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Refuser"
-                  >
-                    <span className="material-symbols-outlined">cancel</span>
+                    <span className="material-symbols-outlined">delete</span>
                   </button>
                 </div>
-                <button 
-                  onClick={() => setRequestToDelete(request.id)}
-                  className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
-                  title="Supprimer"
-                >
-                  <span className="material-symbols-outlined">delete</span>
-                </button>
-              </div>
+              )}
             </div>
           ))}
           {requests.length === 0 && (

@@ -398,44 +398,33 @@ export default function MembersList() {
               className="pl-10 pr-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none w-64 transition-all"
             />
           </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileUpload} 
-            accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, application/vnd.oasis.opendocument.spreadsheet" 
-            className="hidden" 
-          />
-          <button 
-            onClick={exportToPDF}
-            className="px-4 py-3 rounded-xl font-bold flex items-center gap-2 bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors"
-            title="Exporter en PDF"
-          >
-            <span className="material-symbols-outlined">picture_as_pdf</span>
-            <span className="hidden md:inline">PDF</span>
-          </button>
-          <button 
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="px-4 py-3 rounded-xl font-bold flex items-center gap-2 bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors"
-            title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
-          >
-            <span className="material-symbols-outlined">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
-          </button>
-          <button 
-            onClick={() => setIsDeletingAll(true)}
-            disabled={members.length === 0 || isImporting}
-            className="px-4 py-3 rounded-xl font-bold flex items-center gap-2 bg-error/10 text-error hover:bg-error/20 transition-colors disabled:opacity-50"
-            title="Vider la liste"
-          >
-            <span className="material-symbols-outlined">delete_sweep</span>
-          </button>
-          <button 
-            onClick={triggerFileInput}
-            disabled={isImporting}
-            className="px-6 py-3 rounded-xl font-bold flex items-center gap-2 bg-primary text-on-primary shadow-md hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined">upload_file</span>
-            {isImporting ? 'Importation...' : 'Importer'}
-          </button>
+          {userData?.role !== 'client' && (
+            <>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, application/vnd.oasis.opendocument.spreadsheet" 
+                className="hidden" 
+              />
+              <button 
+                onClick={() => setIsDeletingAll(true)}
+                disabled={members.length === 0 || isImporting}
+                className="px-4 py-3 rounded-xl font-bold flex items-center gap-2 bg-error/10 text-error hover:bg-error/20 transition-colors disabled:opacity-50"
+                title="Vider la liste"
+              >
+                <span className="material-symbols-outlined">delete_sweep</span>
+              </button>
+              <button 
+                onClick={triggerFileInput}
+                disabled={isImporting}
+                className="px-6 py-3 rounded-xl font-bold flex items-center gap-2 bg-primary text-on-primary shadow-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined">upload_file</span>
+                {isImporting ? 'Importation...' : 'Importer'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -453,7 +442,7 @@ export default function MembersList() {
                 <th className="py-3 px-4 font-bold">Montant</th>
                 <th className="py-3 px-4 font-bold">Statut</th>
                 <th className="py-3 px-4 font-bold">Rôle</th>
-                <th className="py-3 px-4 font-bold text-right">Actions</th>
+                {userData?.role !== 'client' && <th className="py-3 px-4 font-bold text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/20 text-sm">
@@ -494,24 +483,26 @@ export default function MembersList() {
                       {!member.activity && <span className="text-on-surface-variant text-[10px] italic">-</span>}
                     </div>
                   </td>
-                  <td className="py-2 px-4 text-right">
-                    <div className="flex justify-end gap-1">
-                      <button 
-                        onClick={() => setMemberToEdit(member)}
-                        className="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                        title="Éditer"
-                      >
-                        <span className="material-symbols-outlined text-sm">edit</span>
-                      </button>
-                      <button 
-                        onClick={() => setMemberToDelete(member.id)}
-                        className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
-                        title="Supprimer"
-                      >
-                        <span className="material-symbols-outlined text-sm">delete</span>
-                      </button>
-                    </div>
-                  </td>
+                  {userData?.role !== 'client' && (
+                    <td className="py-2 px-4 text-right">
+                      <div className="flex justify-end gap-1">
+                        <button 
+                          onClick={() => setMemberToEdit(member)}
+                          className="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          title="Éditer"
+                        >
+                          <span className="material-symbols-outlined text-sm">edit</span>
+                        </button>
+                        <button 
+                          onClick={() => setMemberToDelete(member.id)}
+                          className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+                          title="Supprimer"
+                        >
+                          <span className="material-symbols-outlined text-sm">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
               {filteredMembers.length === 0 && (

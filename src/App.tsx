@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
-import ClientPortal from './pages/ClientPortal';
 
 function ProtectedRoute({ children, requireAdmin = false }: { children: React.ReactNode, requireAdmin?: boolean }) {
   const { user, userData, loading } = useAuth();
@@ -21,7 +20,7 @@ function ProtectedRoute({ children, requireAdmin = false }: { children: React.Re
   }
 
   if (requireAdmin && userData?.role !== 'admin' && userData?.role !== 'superadmin') {
-    return <Navigate to="/portal" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -42,28 +41,16 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route 
-        path="/admin" 
+        path="/dashboard" 
         element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute>
             <AdminDashboard />
           </ProtectedRoute>
         } 
       />
       <Route 
-        path="/portal" 
-        element={
-          <ProtectedRoute>
-            <ClientPortal />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
         path="/" 
-        element={
-          (userData?.role === 'admin' || userData?.role === 'superadmin') ? 
-            <Navigate to="/admin" replace /> : 
-            <Navigate to="/portal" replace />
-        } 
+        element={<Navigate to="/dashboard" replace />} 
       />
     </Routes>
   );

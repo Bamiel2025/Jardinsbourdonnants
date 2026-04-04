@@ -3,8 +3,10 @@ import { collection, onSnapshot, query, addDoc, updateDoc, deleteDoc, doc, serve
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function GardenManagement() {
+  const { userData } = useAuth();
   const [plots, setPlots] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -74,8 +76,8 @@ export default function GardenManagement() {
 
     return (
       <div 
-        onClick={() => openModal(plot, num)}
-        className={`border-2 border-slate-800 bg-white p-2 flex flex-col items-center cursor-pointer hover:bg-slate-50 transition-colors relative ${isLarge ? 'h-full min-h-[200px]' : 'h-28'}`}
+        onClick={() => userData?.role !== 'client' && openModal(plot, num)}
+        className={`border-2 border-slate-800 bg-white p-2 flex flex-col items-center ${userData?.role !== 'client' ? 'cursor-pointer hover:bg-slate-50' : 'cursor-default'} transition-colors relative ${isLarge ? 'h-full min-h-[200px]' : 'h-28'}`}
       >
         <div className="text-[10px] font-bold mb-1 text-slate-800">PARCELLE {num}</div>
         {customTitle && <div className="text-[9px] font-bold mb-1 text-center text-slate-800">({customTitle})</div>}
@@ -98,8 +100,8 @@ export default function GardenManagement() {
     const plot = plots.find(p => p.plotNumber === '3');
     return (
       <div 
-        onClick={() => openModal(plot, '3')}
-        className="border-2 border-slate-800 bg-white p-1 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors h-28 relative overflow-hidden"
+        onClick={() => userData?.role !== 'client' && openModal(plot, '3')}
+        className={`border-2 border-slate-800 bg-white p-1 flex flex-col items-center justify-center ${userData?.role !== 'client' ? 'cursor-pointer hover:bg-slate-50' : 'cursor-default'} transition-colors h-28 relative overflow-hidden`}
       >
         <div className="text-[10px] font-bold mb-1 text-slate-800">PARCELLE 3</div>
         <div className="w-6 h-6 rounded-full border border-slate-800 flex items-center justify-center font-bold mb-1 bg-white z-10 text-slate-800 text-xs">3</div>
@@ -247,13 +249,15 @@ export default function GardenManagement() {
           >
             <span className="material-symbols-outlined">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
           </button>
-          <button 
-            onClick={() => openModal()}
-            className="px-6 py-2 rounded-xl font-bold flex items-center gap-2 bg-primary text-on-primary shadow-md hover:bg-primary/90 transition-colors"
-          >
-            <span className="material-symbols-outlined">add</span>
-            Ajouter une parcelle
-          </button>
+          {userData?.role !== 'client' && (
+            <button 
+              onClick={() => openModal()}
+              className="px-6 py-2 rounded-xl font-bold flex items-center gap-2 bg-primary text-on-primary shadow-md hover:bg-primary/90 transition-colors"
+            >
+              <span className="material-symbols-outlined">add</span>
+              Ajouter une parcelle
+            </button>
+          )}
         </div>
       </div>
 
@@ -406,22 +410,24 @@ export default function GardenManagement() {
                     )}
                   </div>
 
-                  <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-outline-variant/10">
-                    <button 
-                      onClick={() => openModal(plot)}
-                      className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                      title="Modifier"
-                    >
-                      <span className="material-symbols-outlined text-sm">edit</span>
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(plot.id)}
-                      className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
-                      title="Supprimer"
-                    >
-                      <span className="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                  </div>
+                  {userData?.role !== 'client' && (
+                    <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-outline-variant/10">
+                      <button 
+                        onClick={() => openModal(plot)}
+                        className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                        title="Modifier"
+                      >
+                        <span className="material-symbols-outlined text-sm">edit</span>
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(plot.id)}
+                        className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+                        title="Supprimer"
+                      >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
               

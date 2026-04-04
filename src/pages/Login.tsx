@@ -144,11 +144,7 @@ export default function Login() {
       }, { merge: true });
 
       // After updating the document, force navigation
-      if (finalRole === 'admin' || finalRole === 'superadmin') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/portal', { replace: true });
-      }
+      navigate('/dashboard', { replace: true });
 
     } catch (err: any) {
       console.error(err);

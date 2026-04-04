@@ -5,6 +5,7 @@ import { fr } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { useAuth } from '../contexts/AuthContext';
 
 const locales = {
   'fr': fr,
@@ -19,6 +20,7 @@ const localizer = dateFnsLocalizer({
 });
 
 export default function Agenda() {
+  const { userData } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -265,7 +267,7 @@ export default function Agenda() {
                     <span className="material-symbols-outlined text-sm">edit_note</span>
                     Pense-bête (Matériel, Contacts...)
                   </p>
-                  {!isEditingNotes && (
+                  {userData?.role !== 'client' && !isEditingNotes && (
                     <button 
                       onClick={() => setIsEditingNotes(true)}
                       className="text-primary hover:text-primary/80 text-sm font-bold flex items-center gap-1"

@@ -3,8 +3,10 @@ import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase
 import { db } from '../../lib/firebase';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function RucherVisits() {
+  const { userData } = useAuth();
   const [visits, setVisits] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -112,7 +114,7 @@ export default function RucherVisits() {
                   <th className="p-4 font-bold">Session</th>
                   <th className="p-4 font-bold">Participants</th>
                   <th className="p-4 font-bold">Statut</th>
-                  <th className="p-4 font-bold text-right">Actions</th>
+                  {userData?.role !== 'client' && <th className="p-4 font-bold text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20">
@@ -135,25 +137,27 @@ export default function RucherVisits() {
                       </div>
                     </td>
                     <td className="p-4">{getStatusBadge(visit.status)}</td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-end gap-2">
-                        {visit.status !== 'validé' && (
-                          <button onClick={() => updateStatus(visit.id, 'validé')} className="p-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg transition-colors cursor-pointer" title="Valider">
-                            <span className="material-symbols-outlined text-sm">check_circle</span>
-                          </button>
-                        )}
-                        {visit.status !== 'en cours de validation' && (
-                          <button onClick={() => updateStatus(visit.id, 'en cours de validation')} className="p-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg transition-colors cursor-pointer" title="Mettre en cours de validation">
-                            <span className="material-symbols-outlined text-sm">pending</span>
-                          </button>
-                        )}
-                        {visit.status !== 'proposition session suivante' && (
-                          <button onClick={() => updateStatus(visit.id, 'proposition session suivante')} className="p-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors cursor-pointer" title="Groupe complet - Proposer session suivante">
-                            <span className="material-symbols-outlined text-sm">event_busy</span>
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                    {userData?.role !== 'client' && (
+                      <td className="p-4">
+                        <div className="flex items-center justify-end gap-2">
+                          {visit.status !== 'validé' && (
+                            <button onClick={() => updateStatus(visit.id, 'validé')} className="p-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg transition-colors cursor-pointer" title="Valider">
+                              <span className="material-symbols-outlined text-sm">check_circle</span>
+                            </button>
+                          )}
+                          {visit.status !== 'en cours de validation' && (
+                            <button onClick={() => updateStatus(visit.id, 'en cours de validation')} className="p-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg transition-colors cursor-pointer" title="Mettre en cours de validation">
+                              <span className="material-symbols-outlined text-sm">pending</span>
+                            </button>
+                          )}
+                          {visit.status !== 'proposition session suivante' && (
+                            <button onClick={() => updateStatus(visit.id, 'proposition session suivante')} className="p-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors cursor-pointer" title="Groupe complet - Proposer session suivante">
+                              <span className="material-symbols-outlined text-sm">event_busy</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

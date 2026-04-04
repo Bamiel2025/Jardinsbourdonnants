@@ -3,8 +3,10 @@ import { collection, onSnapshot, query, orderBy, updateDoc, doc, addDoc, serverT
 import { db } from '../lib/firebase';
 import { jsPDF } from 'jspdf';
 import InvoiceEditor from './InvoiceEditor';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function QuotesAndInvoices() {
+  const { userData } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'quotes' | 'invoices'>('quotes');
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
@@ -153,28 +155,32 @@ export default function QuotesAndInvoices() {
               Factures
             </button>
           </div>
-          <button 
-            onClick={() => {
-              setEditorType('quote');
-              setEditingItem(null);
-              setIsEditorOpen(true);
-            }}
-            className="px-4 py-2 rounded-xl font-bold flex items-center gap-2 bg-amber-600 text-white shadow-md hover:bg-amber-700 transition-colors"
-          >
-            <span className="material-symbols-outlined">add</span>
-            Créer un devis libre
-          </button>
-          <button 
-            onClick={() => {
-              setEditorType('invoice');
-              setEditingItem(null);
-              setIsEditorOpen(true);
-            }}
-            className="px-4 py-2 rounded-xl font-bold flex items-center gap-2 bg-primary text-on-primary shadow-md hover:bg-primary/90 transition-colors"
-          >
-            <span className="material-symbols-outlined">add</span>
-            Créer une facture libre
-          </button>
+          {userData?.role !== 'client' && (
+            <>
+              <button 
+                onClick={() => {
+                  setEditorType('quote');
+                  setEditingItem(null);
+                  setIsEditorOpen(true);
+                }}
+                className="px-4 py-2 rounded-xl font-bold flex items-center gap-2 bg-amber-600 text-white shadow-md hover:bg-amber-700 transition-colors"
+              >
+                <span className="material-symbols-outlined">add</span>
+                Créer un devis libre
+              </button>
+              <button 
+                onClick={() => {
+                  setEditorType('invoice');
+                  setEditingItem(null);
+                  setIsEditorOpen(true);
+                }}
+                className="px-4 py-2 rounded-xl font-bold flex items-center gap-2 bg-primary text-on-primary shadow-md hover:bg-primary/90 transition-colors"
+              >
+                <span className="material-symbols-outlined">add</span>
+                Créer une facture libre
+              </button>
+            </>
+          )}
           <button 
             onClick={() => setIsFullscreen(!isFullscreen)}
             className="px-4 py-2 rounded-xl font-bold flex items-center gap-2 bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition-colors"
@@ -217,7 +223,7 @@ export default function QuotesAndInvoices() {
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex justify-end gap-2">
-                      {activeTab === 'quotes' && item.status !== 'facturé' && (
+                      {userData?.role !== 'client' && activeTab === 'quotes' && item.status !== 'facturé' && (
                         <>
                           <button 
                             onClick={() => {
@@ -247,7 +253,7 @@ export default function QuotesAndInvoices() {
                         </>
                       )}
                       
-                      {activeTab === 'quotes' && item.status === 'validé' && (
+                      {userData?.role !== 'client' && activeTab === 'quotes' && item.status === 'validé' && (
                         <button 
                           onClick={() => generateInvoiceFromQuote(item)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -265,13 +271,15 @@ export default function QuotesAndInvoices() {
                         <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
                       </button>
 
-                      <button 
-                        onClick={() => setItemToDelete(item.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                        title="Supprimer"
-                      >
-                        <span className="material-symbols-outlined text-sm">delete</span>
-                      </button>
+                      {userData?.role !== 'client' && (
+                        <button 
+                          onClick={() => setItemToDelete(item.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                          title="Supprimer"
+                        >
+                          <span className="material-symbols-outlined text-sm">delete</span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

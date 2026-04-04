@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, orderBy, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import RucherVisits from './admin/RucherVisits';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function EventsList() {
+  const { userData } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -77,7 +79,7 @@ export default function EventsList() {
                     <th className="p-4 font-bold">Date de fin</th>
                     <th className="p-4 font-bold">Toute la journée</th>
                     <th className="p-4 font-bold">Statut</th>
-                    <th className="p-4 font-bold text-right">Actions</th>
+                    {userData?.role !== 'client' && <th className="p-4 font-bold text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/20">
@@ -97,38 +99,40 @@ export default function EventsList() {
                           {item.status || 'en attente de validation'}
                         </span>
                       </td>
-                      <td className="p-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button 
-                            onClick={() => updateStatus(item.id, 'en attente de validation')}
-                            className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                            title="Mettre en attente"
-                          >
-                            <span className="material-symbols-outlined text-sm">schedule</span>
-                          </button>
-                          <button 
-                            onClick={() => updateStatus(item.id, 'validé')}
-                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                            title="Valider"
-                          >
-                            <span className="material-symbols-outlined text-sm">check_circle</span>
-                          </button>
-                          <button 
-                            onClick={() => updateStatus(item.id, 'reporté')}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Reporter"
-                          >
-                            <span className="material-symbols-outlined text-sm">event_repeat</span>
-                          </button>
-                          <button 
-                            onClick={() => setItemToDelete(item.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Supprimer"
-                          >
-                            <span className="material-symbols-outlined text-sm">delete</span>
-                          </button>
-                        </div>
-                      </td>
+                      {userData?.role !== 'client' && (
+                        <td className="p-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => updateStatus(item.id, 'en attente de validation')}
+                              className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                              title="Mettre en attente"
+                            >
+                              <span className="material-symbols-outlined text-sm">schedule</span>
+                            </button>
+                            <button 
+                              onClick={() => updateStatus(item.id, 'validé')}
+                              className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              title="Valider"
+                            >
+                              <span className="material-symbols-outlined text-sm">check_circle</span>
+                            </button>
+                            <button 
+                              onClick={() => updateStatus(item.id, 'reporté')}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Reporter"
+                            >
+                              <span className="material-symbols-outlined text-sm">event_repeat</span>
+                            </button>
+                            <button 
+                              onClick={() => setItemToDelete(item.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Supprimer"
+                            >
+                              <span className="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                   {items.length === 0 && (
