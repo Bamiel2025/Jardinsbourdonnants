@@ -18,6 +18,9 @@ export default function RucherVisits() {
       }));
       setVisits(data);
       setIsLoading(false);
+    }, (error) => {
+      console.error("Erreur Firebase dans RucherVisits:", error);
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -46,11 +49,46 @@ export default function RucherVisits() {
     }
   };
 
+  const slots = ['9h30', '10h30', '11h30', '14h30', '15h30', '16h30'];
+  const occupancy = slots.reduce((acc: any, slot) => {
+    const slotVisits = visits.filter(v => v.heure === slot && v.status === 'validé');
+    acc[slot] = {
+      adultes: slotVisits.reduce((sum, v) => sum + (v.adultes || 0), 0),
+      enfants: slotVisits.reduce((sum, v) => sum + (v.enfants || 0), 0)
+    };
+    return acc;
+  }, {});
+
   return (
-    <div className="p-8 max-w-[1600px] mx-auto w-full space-y-8 animate-in fade-in">
+    <div className="flex flex-col space-y-8 animate-in fade-in">
       <div>
-        <h2 className="text-4xl font-extrabold text-primary tracking-tight font-headline">Visites Rucher (7 Juin 2026)</h2>
-        <p className="text-on-surface-variant mt-2 text-lg">Gestion des inscriptions pour la journée aux jardins Bourdonnants.</p>
+        <h2 className="text-3xl font-extrabold text-primary tracking-tight font-headline">Visites Rucher (7 Juin 2026)</h2>
+        <p className="text-on-surface-variant mt-1 text-base">Gestion des inscriptions et suivi du remplissage par créneau.</p>
+      </div>
+
+      {/* Summary of occupancy */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {slots.map(slot => (
+          <div key={slot} className={`p-4 rounded-2xl border ${occupancy[slot].adultes >= 10 && occupancy[slot].enfants >= 10 ? 'bg-red-50 border-red-200' : 'bg-surface-container-low border-outline-variant/30'}`}>
+            <p className="text-sm font-bold text-primary mb-2">{slot}</p>
+            <div className="space-y-1">
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                <span>Adultes</span>
+                <span className={occupancy[slot].adultes >= 10 ? 'text-red-600' : 'text-on-surface-variant'}>{occupancy[slot].adultes}/10</span>
+              </div>
+              <div className="w-full h-1.5 bg-outline-variant/20 rounded-full overflow-hidden">
+                <div className={`h-full transition-all ${occupancy[slot].adultes >= 10 ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, (occupancy[slot].adultes / 10) * 100)}%` }} />
+              </div>
+              <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider pt-1">
+                <span>Enfants</span>
+                <span className={occupancy[slot].enfants >= 10 ? 'text-red-600' : 'text-on-surface-variant'}>{occupancy[slot].enfants}/10</span>
+              </div>
+              <div className="w-full h-1.5 bg-outline-variant/20 rounded-full overflow-hidden">
+                <div className={`h-full transition-all ${occupancy[slot].enfants >= 10 ? 'bg-red-500' : 'bg-teal-500'}`} style={{ width: `${Math.min(100, (occupancy[slot].enfants / 10) * 100)}%` }} />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="bg-surface-container-lowest rounded-3xl shadow-sm border border-outline-variant/20 overflow-hidden">

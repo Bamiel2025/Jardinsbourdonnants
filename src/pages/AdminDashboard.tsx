@@ -11,7 +11,6 @@ import GardenManagement from '../components/GardenManagement';
 import Settings from '../components/Settings';
 import EventsList from '../components/EventsList';
 import AdministrationPanel from '../components/AdministrationPanel';
-import RucherVisits from '../components/admin/RucherVisits';
 import { format, addDays, startOfWeek, isSameDay, subWeeks, addWeeks, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -55,8 +54,6 @@ export default function AdminDashboard() {
         return <AdministrationPanel />;
       case 'settings':
         return <Settings />;
-      case 'rucher_visits':
-        return <RucherVisits />;
       default:
         return <DashboardContent />;
     }
@@ -120,10 +117,6 @@ export default function AdminDashboard() {
             <button onClick={() => setActiveTab('monitoring')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'monitoring' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
               <span className="material-symbols-outlined">monitor_weight</span>
               <span>Monitoring Ruches</span>
-            </button>
-            <button onClick={() => setActiveTab('rucher_visits')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'rucher_visits' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
-              <span className="material-symbols-outlined">hive</span>
-              <span>Visites 7 Juin</span>
             </button>
             <button onClick={() => setActiveTab('administration')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'administration' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
               <span className="material-symbols-outlined">admin_panel_settings</span>
@@ -244,7 +237,6 @@ export default function AdminDashboard() {
               { id: 'agenda', icon: 'calendar_today', label: 'Agenda' },
               { id: 'reservations', icon: 'event_seat', label: 'Résa' },
               { id: 'events', icon: 'celebration', label: 'Événements' },
-              { id: 'rucher_visits', icon: 'hive', label: '7 Juin' },
               { id: 'members', icon: 'group', label: 'Membres' },
             ].map(tab => (
               <button
