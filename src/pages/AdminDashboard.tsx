@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Agenda from '../components/Agenda';
 import CreateModal from '../components/CreateModal';
@@ -18,6 +19,7 @@ import { db } from '../lib/firebase';
 
 export default function AdminDashboard() {
   const { userData, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -206,6 +208,14 @@ export default function AdminDashboard() {
               className="p-2 text-emerald-900 dark:text-emerald-50 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-full transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined">settings</span>
+            </button>
+            <div className="h-8 w-px bg-outline-variant/30 mx-2"></div>
+            <button
+              onClick={() => navigate('/portal')}
+              className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-900 dark:text-emerald-50 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">person</span>
+              Mon Espace
             </button>
             <div className="h-8 w-px bg-outline-variant/30 mx-2"></div>
             <div className="flex items-center gap-3 pl-2">

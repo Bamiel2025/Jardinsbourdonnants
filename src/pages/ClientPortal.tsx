@@ -101,15 +101,13 @@ export default function ClientPortal() {
         </div>
         <div className="flex items-center gap-4">
           <span className="font-medium hidden sm:block">{userData?.displayName}</span>
-          {(userData?.role === 'admin' || userData?.role === 'superadmin') && (
-            <button
-              onClick={() => navigate('/admin')}
-              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-base">dashboard</span>
-              Tableau de bord
-            </button>
-          )}
+          <button
+            onClick={() => navigate(userData?.role === 'client' ? '/portal' : '/admin')}
+            className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">dashboard</span>
+            {userData?.role === 'client' ? 'Mon Espace' : 'Tableau de bord'}
+          </button>
           <button onClick={logout} className="bg-primary-fixed text-on-primary-fixed px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary-fixed/90 transition-colors cursor-pointer">
             Déconnexion
           </button>
