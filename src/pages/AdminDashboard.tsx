@@ -452,6 +452,64 @@ function DashboardContent() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* News Section */}
+        <div className="lg:col-span-2 space-y-6">
+          <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
+            <span className="material-symbols-outlined">newspaper</span>
+            Dernières Actualités
+          </h3>
+          <div className="space-y-4">
+            {[
+              { date: '15 Avril 2026', title: 'Préparation de la saison apicole', text: 'Les premières visites de printemps ont commencé. Les colonies se développent bien !' },
+              { date: '02 Avril 2026', title: 'Nouvelle parcelle aux jardins', text: 'Trois nouvelles parcelles sont disponibles pour l\'adhésion "Potager". Premier arrivé, premier servi !' }
+            ].map((news, i) => (
+              <div key={i} className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 hover:shadow-md transition-shadow">
+                <span className="text-xs font-bold text-primary-fixed bg-primary-container px-2 py-1 rounded-full">{news.date}</span>
+                <h4 className="text-xl font-bold mt-2 text-on-surface">{news.title}</h4>
+                <p className="text-on-surface-variant mt-1">{news.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Info / Weather */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
+            <span className="material-symbols-outlined">cloud</span>
+            Météo du Rucher
+          </h3>
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-2xl border border-blue-200 dark:border-blue-800 flex flex-col items-center">
+            <span className="material-symbols-outlined text-6xl text-blue-500 animate-pulse">sunny</span>
+            <div className="text-center mt-4">
+              <span className="text-4xl font-black text-on-surface">18°C</span>
+              <p className="text-on-surface-variant font-medium">Grand Soleil - Idéal pour le butinage</p>
+            </div>
+            <div className="w-full mt-6 grid grid-cols-2 gap-2 text-xs text-center font-bold">
+              <div className="bg-white/50 dark:bg-black/20 p-2 rounded-lg">Humidité: 45%</div>
+              <div className="bg-white/50 dark:bg-black/20 p-2 rounded-lg">Vent: 10km/h</div>
+            </div>
+          </div>
+          
+          <div className="bg-surface-container-low p-6 rounded-2xl border border-outline-variant/30 space-y-4">
+            <h4 className="font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">auto_awesome</span>
+              État du Système
+            </h4>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-on-surface-variant italic">Base de données :</span>
+                <span className="font-bold text-green-600">Connecté</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-on-surface-variant italic">Stockage :</span>
+                <span className="font-bold">2.4 GB / 5 GB</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Mini Agenda */}
       <div className="bg-surface-container-lowest p-6 rounded-3xl shadow-sm border border-outline-variant/20">
         <div className="flex justify-between items-center mb-6">

@@ -8,7 +8,7 @@ export default function ClientPortal() {
   const { userData, logout } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'reservation' | 'monitoring'>('reservation');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'reservation' | 'monitoring'>('dashboard');
   const [reservationType, setReservationType] = useState<'adhesion' | 'animation'>('adhesion');
   const [parcelType, setParcelType] = useState<'garden' | 'apiary'>('garden');
   const [audienceType, setAudienceType] = useState<'scolaire' | 'public' | 'entreprises'>('scolaire');
@@ -85,6 +85,77 @@ export default function ClientPortal() {
     }
   };
 
+  const renderDashboard = () => (
+    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="relative z-10">
+          <h2 className="text-4xl font-black font-headline mb-2">Bonjour, {userData?.displayName} ! 🐝</h2>
+          <p className="text-emerald-50 text-lg max-w-xl">Bienvenue sur votre espace adhérent Les Jardins Bourdonnants. Retrouvez ici vos services et les dernières actualités de notre association.</p>
+        </div>
+        <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-[180px] opacity-10 rotate-12 select-none">hive</span>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* News Section */}
+        <div className="lg:col-span-2 space-y-6">
+          <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
+            <span className="material-symbols-outlined">newspaper</span>
+            Dernières Actualités
+          </h3>
+          <div className="space-y-4">
+            {[
+              { date: '15 Avril 2026', title: 'Préparation de la saison apicole', text: 'Les premières visites de printemps ont commencé. Les colonies se développent bien !' },
+              { date: '02 Avril 2026', title: 'Nouvelle parcelle aux jardins', text: 'Trois nouvelles parcelles sont disponibles pour l\'adhésion "Potager". Premier arrivé, premier servi !' }
+            ].map((news, i) => (
+              <div key={i} className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 hover:shadow-md transition-shadow">
+                <span className="text-xs font-bold text-primary-fixed bg-primary-container px-2 py-1 rounded-full">{news.date}</span>
+                <h4 className="text-xl font-bold mt-2 text-on-surface">{news.title}</h4>
+                <p className="text-on-surface-variant mt-1">{news.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Info / Weather */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
+            <span className="material-symbols-outlined">cloud</span>
+            Météo du Rucher
+          </h3>
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-2xl border border-blue-200 dark:border-blue-800 flex flex-col items-center">
+            <span className="material-symbols-outlined text-6xl text-blue-500 animate-pulse">sunny</span>
+            <div className="text-center mt-4">
+              <span className="text-4xl font-black text-on-surface">18°C</span>
+              <p className="text-on-surface-variant font-medium">Grand Soleil - Idéal pour le butinage</p>
+            </div>
+            <div className="w-full mt-6 grid grid-cols-2 gap-2 text-xs text-center font-bold">
+              <div className="bg-white/50 dark:bg-black/20 p-2 rounded-lg">Humidité: 45%</div>
+              <div className="bg-white/50 dark:bg-black/20 p-2 rounded-lg">Vent: 10km/h</div>
+            </div>
+          </div>
+          
+          <div className="bg-surface-container-low p-6 rounded-2xl border border-outline-variant/30 space-y-4">
+            <h4 className="font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">auto_awesome</span>
+              Statistiques Globales
+            </h4>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-on-surface-variant italic">Membres actifs :</span>
+                <span className="font-bold">142</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-on-surface-variant italic">Récolte 2025 :</span>
+                <span className="font-bold">250kg</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background text-on-background flex flex-col relative">
       {toastMessage && (
@@ -114,26 +185,34 @@ export default function ClientPortal() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-5xl mx-auto w-full p-8 flex flex-col">
-        <div className="flex gap-4 mb-6">
+      <main className="flex-1 max-w-6xl mx-auto w-full p-8 flex flex-col">
+        <div className="flex gap-4 mb-8 overflow-x-auto no-scrollbar">
+          <button 
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-primary text-on-primary shadow-lg scale-105' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}`}
+          >
+            <span className="material-symbols-outlined">dashboard</span>
+            Tableau de Bord
+          </button>
           <button 
             onClick={() => setActiveTab('reservation')}
-            className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${activeTab === 'reservation' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}`}
+            className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'reservation' ? 'bg-primary text-on-primary shadow-lg scale-105' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}`}
           >
             <span className="material-symbols-outlined">event_seat</span>
             Réservation & Devis
           </button>
           <button 
             onClick={() => setActiveTab('monitoring')}
-            className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${activeTab === 'monitoring' ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}`}
+            className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'monitoring' ? 'bg-primary text-on-primary shadow-lg scale-105' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}`}
           >
             <span className="material-symbols-outlined">monitor_weight</span>
             Monitoring Ruches
           </button>
         </div>
 
-        {activeTab === 'reservation' ? (
-          <div className="bg-surface-container-lowest rounded-3xl p-8 shadow-sm border border-outline-variant/20">
+        {activeTab === 'dashboard' ? renderDashboard() : 
+         activeTab === 'reservation' ? (
+          <div className="bg-surface-container-lowest rounded-3xl p-8 shadow-sm border border-outline-variant/20 animate-in fade-in slide-in-from-bottom-4">
             <h2 className="text-3xl font-extrabold text-primary font-headline mb-2">Demande de devis & réservation</h2>
             <p className="text-on-surface-variant mb-8">Obtenez un devis immédiat pour une adhésion ou une animation.</p>
 
