@@ -344,7 +344,15 @@ export default function AdminDashboard() {
               { id: 'agenda', icon: 'calendar_today', label: 'Agenda' },
               { id: 'reservations', icon: 'event_seat', label: 'Résa' },
               { id: 'events', icon: 'celebration', label: 'Événements' },
+              { id: 'quotes', icon: 'receipt_long', label: 'Devis' },
+              { id: 'purchases', icon: 'shopping_cart', label: 'Achats' },
               { id: 'members', icon: 'group', label: 'Membres' },
+              { id: 'gardens', icon: 'yard', label: 'Jardins' },
+              { id: 'monitoring', icon: 'monitor_weight', label: 'Monitoring' },
+              ...(userData?.role === 'superadmin' ? [
+                { id: 'administration', icon: 'admin_panel_settings', label: 'Admin' },
+                { id: 'settings', icon: 'settings', label: 'Params' }
+              ] : [])
             ].map(tab => (
               <button
                 key={tab.id}
