@@ -10,6 +10,7 @@ import GardenManagement from '../components/GardenManagement';
 import Settings from '../components/Settings';
 import EventsList from '../components/EventsList';
 import AdministrationPanel from '../components/AdministrationPanel';
+import RucherVisits from '../components/admin/RucherVisits';
 import { format, addDays, startOfWeek, isSameDay, subWeeks, addWeeks, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -21,6 +22,7 @@ export default function AdminDashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isMobileView, setIsMobileView] = useState(false);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -51,15 +53,17 @@ export default function AdminDashboard() {
         return <AdministrationPanel />;
       case 'settings':
         return <Settings />;
+      case 'rucher_visits':
+        return <RucherVisits />;
       default:
         return <DashboardContent />;
     }
   };
 
   return (
-    <div className="bg-background text-on-background min-h-screen flex">
+    <div className={`bg-background text-on-background min-h-screen flex ${isMobileView ? 'flex-col' : ''}`}>
       {/* SideNavBar Component */}
-      <aside className="flex flex-col h-full sticky top-0 left-0 bg-emerald-900 dark:bg-slate-950 text-amber-400 dark:text-amber-500 font-headline antialiased tracking-tight h-screen w-72 rounded-r-3xl border-none shadow-2xl shadow-emerald-950/20 z-50 overflow-y-auto">
+      <aside className={`${isMobileView ? 'hidden' : 'flex'} flex-col h-full sticky top-0 left-0 bg-emerald-900 dark:bg-slate-950 text-amber-400 dark:text-amber-500 font-headline antialiased tracking-tight h-screen w-72 rounded-r-3xl border-none shadow-2xl shadow-emerald-950/20 z-50 overflow-y-auto`}>
         <div className="p-8">
           <div className="flex flex-col items-center gap-4 mb-10">
             <div className="w-56 h-56 bg-white rounded-full flex items-center justify-center overflow-hidden shadow-xl border-4 border-emerald-800/30 transition-transform hover:scale-105">
@@ -115,6 +119,10 @@ export default function AdminDashboard() {
               <span className="material-symbols-outlined">monitor_weight</span>
               <span>Monitoring Ruches</span>
             </button>
+            <button onClick={() => setActiveTab('rucher_visits')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'rucher_visits' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
+              <span className="material-symbols-outlined">hive</span>
+              <span>Visites 7 Juin</span>
+            </button>
             <button onClick={() => setActiveTab('administration')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'administration' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
               <span className="material-symbols-outlined">admin_panel_settings</span>
               <span>Administration</span>
@@ -155,6 +163,13 @@ export default function AdminDashboard() {
             <input className="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-outline outline-none ml-2" placeholder="Rechercher un membre, une parcelle..." type="text" />
           </div>
           <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsMobileView(!isMobileView)}
+              className={`p-2 rounded-full transition-all cursor-pointer ${isMobileView ? 'bg-primary text-on-primary' : 'text-emerald-900 dark:text-emerald-50 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'}`}
+              title={isMobileView ? "Agrandir le menu" : "Vue Mobile Optimisée"}
+            >
+              <span className="material-symbols-outlined">smartphone</span>
+            </button>
             <div className="relative">
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
@@ -212,7 +227,31 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {renderContent()}
+        {isMobileView && (
+          <div className="bg-emerald-900 text-emerald-100 shadow-md flex overflow-x-auto no-scrollbar py-2 px-4 sticky top-20 z-30">
+            {[
+              { id: 'dashboard', icon: 'dashboard', label: 'Accueil' },
+              { id: 'agenda', icon: 'calendar_today', label: 'Agenda' },
+              { id: 'reservations', icon: 'event_seat', label: 'Résa' },
+              { id: 'events', icon: 'celebration', label: 'Événements' },
+              { id: 'rucher_visits', icon: 'hive', label: '7 Juin' },
+              { id: 'members', icon: 'group', label: 'Membres' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center justify-center min-w-[72px] p-2 rounded-xl transition-all ${activeTab === tab.id ? 'bg-amber-400 text-emerald-900 font-bold' : 'hover:bg-emerald-800'}`}
+              >
+                <span className="material-symbols-outlined text-xl mb-1">{tab.icon}</span>
+                <span className="text-[10px] uppercase tracking-wide">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className={`flex-1 overflow-auto ${isMobileView ? 'p-2' : ''}`}>
+          {renderContent()}
+        </div>
       </main>
 
       {/* Floating Action Button - Contextual */}

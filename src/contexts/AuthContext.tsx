@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../lib/firebase';
 
 interface UserData {
@@ -29,11 +29,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubscribeSnapshot: (() => void) | undefined;
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        unsubscribeSnapshot = onSnapshot(doc(db, 'users', currentUser.uid), async (userDoc) => {
           let currentRole = 'client';
           let clientType = 'public';
           
@@ -60,16 +61,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           
           setUserData(finalUserData as unknown as UserData);
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
+          setLoading(false);
+        }, (error) => {
+          console.error("Error fetching user data snapshot:", error);
+          setLoading(false);
+        });
       } else {
         setUserData(null);
+        setLoading(false);
+        if (unsubscribeSnapshot) {
+          unsubscribeSnapshot();
+          unsubscribeSnapshot = undefined;
+        }
       }
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+      }
+    };
   }, []);
 
   const login = async () => {
