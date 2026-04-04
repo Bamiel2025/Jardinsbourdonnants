@@ -314,6 +314,11 @@ export default function Login() {
                     <option value="16h30">16h30</option>
                   </select>
                 </div>
+
+                <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex justify-between items-center">
+                  <span className="text-amber-900 font-bold">Total à régler sur place :</span>
+                  <span className="text-xl font-black text-amber-900">{(rucherForm.adultes + rucherForm.enfants) * 5} €</span>
+                </div>
                 
                 {error && (
                   <div className="p-3 bg-red-100 text-red-800 rounded-xl text-sm font-bold animate-in fade-in">

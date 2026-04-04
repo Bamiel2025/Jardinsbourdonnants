@@ -38,9 +38,9 @@ export default function RucherVisits() {
       case 'validé':
         return <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold uppercase">Validé</span>;
       case 'en cours de validation':
-        return <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold uppercase">En cours</span>;
-      case 'complet':
-        return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold uppercase">Complet (autre session)</span>;
+        return <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold uppercase">En cours de validation</span>;
+      case 'proposition session suivante':
+        return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold uppercase">Proposition session suivante</span>;
       default:
         return <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-bold">{status}</span>;
     }
@@ -101,11 +101,16 @@ export default function RucherVisits() {
                       <div className="flex items-center justify-end gap-2">
                         {visit.status !== 'validé' && (
                           <button onClick={() => updateStatus(visit.id, 'validé')} className="p-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg transition-colors cursor-pointer" title="Valider">
-                            <span className="material-symbols-outlined text-sm">check</span>
+                            <span className="material-symbols-outlined text-sm">check_circle</span>
                           </button>
                         )}
-                        {visit.status !== 'complet' && (
-                          <button onClick={() => updateStatus(visit.id, 'complet')} className="p-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors cursor-pointer" title="Marquer comme complet / Proposer autre session">
+                        {visit.status !== 'en cours de validation' && (
+                          <button onClick={() => updateStatus(visit.id, 'en cours de validation')} className="p-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg transition-colors cursor-pointer" title="Mettre en cours de validation">
+                            <span className="material-symbols-outlined text-sm">pending</span>
+                          </button>
+                        )}
+                        {visit.status !== 'proposition session suivante' && (
+                          <button onClick={() => updateStatus(visit.id, 'proposition session suivante')} className="p-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors cursor-pointer" title="Groupe complet - Proposer session suivante">
                             <span className="material-symbols-outlined text-sm">event_busy</span>
                           </button>
                         )}
