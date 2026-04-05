@@ -45,8 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             clientType = userDoc.data().clientType || 'public';
           }
 
-          if (currentUser.email === 'briceamiel20@gmail.com') {
+          const email = currentUser.email?.toLowerCase() || '';
+          const superAdmins = ['briceamiel20@gmail.com'];
+          const explicitAdmins = ['lj.lioneljulien@gmail.com', 'laetitia.ondi@hotmail.fr', 'cyril.palpacuer@gmail.com'];
+
+          if (superAdmins.includes(email)) {
             currentRole = 'superadmin';
+          } else if (explicitAdmins.includes(email) && currentRole !== 'superadmin') {
+            currentRole = 'admin';
           }
 
           // Simulation Mode / Impersonation

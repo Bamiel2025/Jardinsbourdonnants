@@ -119,16 +119,20 @@ export default function Login() {
       }
 
       // Check members collection for inherited roles
-      const membersRef = collection(db, 'members');
-      const q = query(membersRef, where('email', '==', currentUser.email));
-      const memberSnap = await getDocs(q);
-
       let dbRole = 'client';
-      if (!memberSnap.empty) {
-        const memberData = memberSnap.docs[0].data();
-        if (memberData.role === 'admin' || memberData.role === 'superadmin') {
-          dbRole = memberData.role;
+      try {
+        const membersRef = collection(db, 'members');
+        const q = query(membersRef, where('email', '==', currentUser.email));
+        const memberSnap = await getDocs(q);
+
+        if (!memberSnap.empty) {
+          const memberData = memberSnap.docs[0].data();
+          if (memberData.role === 'admin' || memberData.role === 'superadmin') {
+            dbRole = memberData.role;
+          }
         }
+      } catch (e) {
+        console.warn("Permission denied to read members collection. Fallback to existing user document role or hardcoded emails.", e);
       }
 
       // Check existing user doc to not downgrade existing admins/superadmins who choose another profile
@@ -142,9 +146,15 @@ export default function Login() {
 
       let finalRole = dbRole;
       
+      const email = currentUser.email?.toLowerCase() || '';
+      const superAdmins = ['briceamiel20@gmail.com'];
+      const explicitAdmins = ['lj.lioneljulien@gmail.com', 'laetitia.ondi@hotmail.fr', 'cyril.palpacuer@gmail.com'];
+
       // Override or confirm with specific log-in
-      if (currentUser.email === 'briceamiel20@gmail.com') {
+      if (superAdmins.includes(email)) {
         finalRole = 'superadmin';
+      } else if (explicitAdmins.includes(email) && finalRole !== 'superadmin') {
+        finalRole = 'admin';
       } else if (selectedProfile === 'admin' && accessCode === codes.admin) {
         // Upgrade to admin if code provided
         if (finalRole !== 'superadmin') finalRole = 'admin';
