@@ -123,24 +123,34 @@ export default function Login() {
       const q = query(membersRef, where('email', '==', currentUser.email));
       const memberSnap = await getDocs(q);
 
-      let inheritedRole = 'client';
+      let dbRole = 'client';
       if (!memberSnap.empty) {
         const memberData = memberSnap.docs[0].data();
         if (memberData.role === 'admin' || memberData.role === 'superadmin') {
-          inheritedRole = memberData.role;
+          dbRole = memberData.role;
         }
       }
 
-      let finalRole = inheritedRole;
+      // Check existing user doc to not downgrade existing admins/superadmins who choose another profile
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+         const existingRole = userDocSnap.data().role;
+         if (existingRole === 'superadmin') dbRole = 'superadmin';
+         else if (existingRole === 'admin' && dbRole !== 'superadmin') dbRole = 'admin';
+      }
+
+      let finalRole = dbRole;
+      
+      // Override or confirm with specific log-in
       if (currentUser.email === 'briceamiel20@gmail.com') {
         finalRole = 'superadmin';
       } else if (selectedProfile === 'admin' && accessCode === codes.admin) {
-        finalRole = 'admin';
+        // Upgrade to admin if code provided
+        if (finalRole !== 'superadmin') finalRole = 'admin';
       }
 
       // Before updating, get existing previous login
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
       const previousLogin = userDocSnap.exists() ? userDocSnap.data().lastLogin : serverTimestamp();
 
       await setDoc(userDocRef, {

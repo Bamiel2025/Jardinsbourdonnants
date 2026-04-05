@@ -195,17 +195,17 @@ export default function AdminDashboard() {
               <span className="material-symbols-outlined">monitor_weight</span>
               <span>Monitoring Ruches</span>
             </button>
+            {(userData?.role === 'admin' || userData?.role === 'superadmin') && (
+              <button onClick={() => setActiveTab('administration')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'administration' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
+                <span className="material-symbols-outlined">admin_panel_settings</span>
+                <span>Administration</span>
+              </button>
+            )}
             {userData?.role === 'superadmin' && (
-              <>
-                <button onClick={() => setActiveTab('administration')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'administration' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
-                  <span className="material-symbols-outlined">admin_panel_settings</span>
-                  <span>Administration</span>
-                </button>
-                <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
-                  <span className="material-symbols-outlined">settings</span>
-                  <span>Paramètres</span>
-                </button>
-              </>
+              <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-amber-400/10 text-amber-400 border-r-4 border-amber-400 font-semibold scale-95' : 'text-emerald-100/70 hover:text-white hover:bg-white/5'}`}>
+                <span className="material-symbols-outlined">settings</span>
+                <span>Paramètres</span>
+              </button>
             )}
           </nav>
           <div className="mt-12">
@@ -349,8 +349,10 @@ export default function AdminDashboard() {
               { id: 'members', icon: 'group', label: 'Membres' },
               { id: 'gardens', icon: 'yard', label: 'Jardins' },
               { id: 'monitoring', icon: 'monitor_weight', label: 'Monitoring' },
+              ...((userData?.role === 'admin' || userData?.role === 'superadmin') ? [
+                { id: 'administration', icon: 'admin_panel_settings', label: 'Admin' }
+              ] : []),
               ...(userData?.role === 'superadmin' ? [
-                { id: 'administration', icon: 'admin_panel_settings', label: 'Admin' },
                 { id: 'settings', icon: 'settings', label: 'Params' }
               ] : [])
             ].map(tab => (
