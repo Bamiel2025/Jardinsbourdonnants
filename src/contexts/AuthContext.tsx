@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, query, where, collection, getDocs } from 'firebase/firestore';
 import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../lib/firebase';
 
 interface UserData {
@@ -19,6 +19,7 @@ interface AuthContextType {
   loading: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+  impersonate: (email: string | null) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [impersonatedEmail, setImpersonatedEmail] = useState<string | null>(localStorage.getItem('impersonatedEmail'));
 
   useEffect(() => {
     let unsubscribeSnapshot: (() => void) | undefined;
@@ -45,6 +47,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (currentUser.email === 'briceamiel20@gmail.com') {
             currentRole = 'superadmin';
+          }
+
+          // Simulation Mode / Impersonation
+          if (impersonatedEmail && (currentRole === 'superadmin' || currentRole === 'admin')) {
+            try {
+              const q = query(collection(db, 'users'), where('email', '==', impersonatedEmail));
+              const snap = await getDocs(q);
+              if (!snap.empty) {
+                const targetData = snap.docs[0].data();
+                setUserData({
+                  uid: snap.docs[0].id,
+                  email: targetData.email || '',
+                  displayName: `(TEST) ${targetData.displayName || targetData.email}`,
+                  role: targetData.role || 'client',
+                  clientType: targetData.clientType || 'public',
+                  createdAt: targetData.createdAt || serverTimestamp(),
+                } as UserData);
+                setLoading(false);
+                return;
+              }
+            } catch (err) {
+              console.error("Error during impersonation:", err);
+            }
           }
 
           const finalUserData = {
@@ -82,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         unsubscribeSnapshot();
       }
     };
-  }, []);
+  }, [impersonatedEmail]);
 
   const login = async () => {
     try {
@@ -95,14 +120,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+      localStorage.removeItem('impersonatedEmail');
+      setImpersonatedEmail(null);
       await signOut(auth);
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
+  const impersonate = async (email: string | null) => {
+    if (email) {
+      localStorage.setItem('impersonatedEmail', email);
+    } else {
+      localStorage.removeItem('impersonatedEmail');
+    }
+    setImpersonatedEmail(email);
+    // Force data refresh by triggering the listener if possible, but state update should trigger re-render
+  };
+
   return (
-    <AuthContext.Provider value={{ user, userData, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, userData, loading, login, logout, impersonate }}>
       {children}
     </AuthContext.Provider>
   );

@@ -6,7 +6,7 @@ import { signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, getDocs, collection, query, where, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Login() {
-  const { user } = useAuth();
+  const { user, impersonate } = useAuth();
   const navigate = useNavigate();
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [accessCode, setAccessCode] = useState('');
@@ -14,6 +14,10 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [codes, setCodes] = useState({ admin: 'BUREAU2026', superadmin: 'ELBRICOL2026' });
+  
+  // Simulation Mode State
+  const [showTestMode, setShowTestMode] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
 
   // Rucher Registration State
   const [showRucherRegistration, setShowRucherRegistration] = useState(false);
@@ -160,6 +164,45 @@ export default function Login() {
     }
   };
 
+  const handleTestLogin = async () => {
+    if (!testEmail || !testEmail.includes('@')) {
+      setError("Veuillez entrer l'email d'un membre à tester.");
+      return;
+    }
+
+    if (accessCode !== codes.superadmin) {
+      setError("Le code superadministrateur est requis pour le mode simulation.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // 1. Authenticate as superadmin first (required for security and DB access)
+      const result = await signInWithPopup(auth, googleProvider);
+      const currentUser = result.user;
+
+      if (currentUser.email !== 'briceamiel20@gmail.com') {
+        await auth.signOut();
+        setError("Seul le compte briceamiel20@gmail.com peut utiliser le mode simulation.");
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Set impersonation in AuthContext
+      await impersonate(testEmail);
+      
+      // 3. Navigate
+      navigate('/dashboard', { replace: true });
+    } catch (err: any) {
+      console.error(err);
+      setError("Erreur lors de la simulation.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="bg-surface-container-lowest p-8 rounded-3xl shadow-xl max-w-2xl w-full text-center">
@@ -230,7 +273,7 @@ export default function Login() {
           disabled={!selectedProfile || isLoading}
           className="w-full max-w-xs mx-auto bg-primary text-on-primary py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          {isLoading ? (
+          {isLoading && !showTestMode ? (
             <span className="animate-spin material-symbols-outlined">refresh</span>
           ) : (
             <>
@@ -239,6 +282,50 @@ export default function Login() {
             </>
           )}
         </button>
+
+        {/* Mode Simulation Section */}
+        <div className="mt-6 border-t border-outline-variant/10 pt-4">
+          <button 
+            onClick={() => setShowTestMode(!showTestMode)}
+            className="text-xs font-medium text-on-surface-variant/60 hover:text-primary transition-colors flex items-center gap-1 mx-auto"
+          >
+            <span className="material-symbols-outlined text-sm">{showTestMode ? 'expand_less' : 'construction'}</span>
+            {showTestMode ? 'Masquer le mode simu' : 'Mode simulation (Admin uniquement)'}
+          </button>
+
+          {showTestMode && (
+            <div className="mt-4 p-4 bg-surface-container rounded-2xl animate-in fade-in slide-in-from-top-2 border border-primary/20 max-w-xs mx-auto">
+              <p className="text-xs text-primary font-bold mb-3 uppercase tracking-wider">Test rendu membre</p>
+              <div className="space-y-3">
+                <input 
+                  type="email" 
+                  value={testEmail}
+                  onChange={e => setTestEmail(e.target.value)}
+                  placeholder="Email du membre à tester"
+                  className="w-full p-2 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-lowest outline-none focus:ring-1 focus:ring-primary"
+                />
+                <input 
+                  type="password" 
+                  value={accessCode}
+                  onChange={e => setAccessCode(e.target.value)}
+                  placeholder="Votre code superadmin"
+                  className="w-full p-2 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-lowest outline-none focus:ring-1 focus:ring-primary"
+                />
+                <button 
+                  onClick={handleTestLogin}
+                  disabled={isLoading}
+                  className="w-full bg-secondary text-on-secondary py-2 rounded-lg font-bold text-sm hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <span className="animate-spin material-symbols-outlined text-sm">refresh</span>
+                  ) : (
+                    'Simuler la connexion'
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="mt-8 pt-8 border-t border-outline-variant/20 flex flex-col gap-4">
           <button
