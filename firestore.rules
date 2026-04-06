@@ -21,6 +21,7 @@ service cloud.firestore {
       return isAuthenticated() &&
         (
           isSuperAdmin() ||
+          request.auth.token.email in ["lj.lioneljulien@gmail.com", "laetitia.ondi@hotmail.fr", "cyril.palpacuer@gmail.com"] ||
           (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'])
         );
     }
@@ -190,7 +191,7 @@ service cloud.firestore {
     }
 
     match /members/{memberId} {
-      allow read: if isAdmin();
+      allow read: if isAuthenticated();
       allow create: if isAdmin() && isValidMember(request.resource.data);
       allow update: if isAdmin() && isValidMember(request.resource.data);
       allow delete: if isAdmin();
@@ -204,7 +205,7 @@ service cloud.firestore {
     }
 
     match /reservations/{reservationId} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow read: if isAuthenticated();
       allow create: if (isAuthenticated() && isValidReservation(request.resource.data) && 
                     request.resource.data.userId == request.auth.uid &&
                     request.resource.data.status == 'pending') || (isAdmin() && isValidReservation(request.resource.data));
@@ -214,7 +215,7 @@ service cloud.firestore {
     }
 
     match /quotes/{quoteId} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow read: if isAuthenticated();
       allow create: if (isAuthenticated() && isValidQuote(request.resource.data) && request.resource.data.userId == request.auth.uid) || (isAdmin() && isValidQuote(request.resource.data));
       allow update: if isAuthenticated() && isValidQuote(request.resource.data) &&
                     ((resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId && request.resource.data.amount == resource.data.amount && request.resource.data.status in ['pending', 'accepted', 'rejected']) || isAdmin());
@@ -222,21 +223,21 @@ service cloud.firestore {
     }
 
     match /invoices/{invoiceId} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow read: if isAuthenticated();
       allow create: if isAdmin() && isValidQuote(request.resource.data);
       allow update: if isAdmin() && isValidQuote(request.resource.data);
       allow delete: if isAdmin();
     }
 
     match /purchaseRequests/{requestId} {
-      allow read: if isAdmin();
+      allow read: if isAuthenticated();
       allow create: if isAdmin() && isValidPurchaseRequest(request.resource.data);
       allow update: if isAdmin() && isValidPurchaseRequest(request.resource.data);
       allow delete: if isAdmin();
     }
 
     match /plots/{plotId} {
-      allow read: if isAdmin();
+      allow read: if isAuthenticated();
       allow create: if isAdmin() && isValidPlot(request.resource.data);
       allow update: if isAdmin() && isValidPlot(request.resource.data);
       allow delete: if isAdmin();

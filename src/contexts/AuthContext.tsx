@@ -82,13 +82,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             uid: currentUser.uid,
             email: currentUser.email || '',
             displayName: currentUser.displayName || '',
-            role: currentRole,
+            role: currentRole as 'superadmin' | 'admin' | 'client',
             clientType,
             createdAt: userDoc.exists() ? userDoc.data().createdAt : serverTimestamp(),
           };
 
-          if (!userDoc.exists()) {
-            await setDoc(doc(db, 'users', currentUser.uid), finalUserData);
+          if (!userDoc.exists() || userDoc.data().role !== currentRole) {
+            await setDoc(doc(db, 'users', currentUser.uid), finalUserData, { merge: true });
           }
           
           setUserData(finalUserData as unknown as UserData);

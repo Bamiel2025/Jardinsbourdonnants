@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface BoardMember {
   id: string;
@@ -13,6 +14,7 @@ interface BoardMember {
 }
 
 export default function BoardMembersList() {
+  const { userData } = useAuth();
   const [members, setMembers] = useState<BoardMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -123,26 +125,30 @@ export default function BoardMembersList() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold text-slate-800">Membres du bureau</h3>
-        <button
-          onClick={() => openModal()}
-          className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <span className="material-symbols-outlined">add</span>
-          Ajouter un membre
-        </button>
+        {userData?.role !== 'client' && (
+          <button
+            onClick={() => openModal()}
+            className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <span className="material-symbols-outlined">add</span>
+            Ajouter un membre
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {members.map(member => (
           <div key={member.id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow relative group">
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-              <button onClick={() => openModal(member)} className="text-slate-400 hover:text-blue-600 bg-white rounded-full p-1 shadow-sm border border-slate-100">
-                <span className="material-symbols-outlined text-sm">edit</span>
-              </button>
-              <button onClick={() => handleDelete(member.id)} className="text-slate-400 hover:text-red-600 bg-white rounded-full p-1 shadow-sm border border-slate-100">
-                <span className="material-symbols-outlined text-sm">delete</span>
-              </button>
-            </div>
+            {userData?.role !== 'client' && (
+              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                <button onClick={() => openModal(member)} className="text-slate-400 hover:text-blue-600 bg-white rounded-full p-1 shadow-sm border border-slate-100">
+                  <span className="material-symbols-outlined text-sm">edit</span>
+                </button>
+                <button onClick={() => handleDelete(member.id)} className="text-slate-400 hover:text-red-600 bg-white rounded-full p-1 shadow-sm border border-slate-100">
+                  <span className="material-symbols-outlined text-sm">delete</span>
+                </button>
+              </div>
+            )}
             
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-emerald-100 text-primary rounded-full flex items-center justify-center font-bold text-xl">

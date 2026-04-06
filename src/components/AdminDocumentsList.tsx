@@ -4,6 +4,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { db, storage, handleFirestoreError, OperationType } from '../lib/firebase';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useAuth } from '../contexts/AuthContext';
 
 interface AdminDocument {
   id: string;
@@ -20,6 +21,7 @@ interface AdminDocumentsListProps {
 }
 
 export default function AdminDocumentsList({ type, title }: AdminDocumentsListProps) {
+  const { userData } = useAuth();
   const [documents, setDocuments] = useState<AdminDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -205,13 +207,15 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
     <div>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold text-slate-800">{title}</h3>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <span className="material-symbols-outlined">upload_file</span>
-          Importer un PDF
-        </button>
+        {userData?.role !== 'client' && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <span className="material-symbols-outlined">upload_file</span>
+            Importer un PDF
+          </button>
+        )}
       </div>
 
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -248,13 +252,15 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
                     >
                       <span className="material-symbols-outlined text-sm">visibility</span>
                     </a>
-                    <button 
-                      onClick={() => handleDelete(adminDoc)} 
-                      className="text-slate-400 hover:text-red-600 bg-white rounded-full p-2 shadow-sm border border-slate-200 transition-colors"
-                      title="Supprimer"
-                    >
-                      <span className="material-symbols-outlined text-sm">delete</span>
-                    </button>
+                    {userData?.role !== 'client' && (
+                      <button 
+                        onClick={() => handleDelete(adminDoc)} 
+                        className="text-slate-400 hover:text-red-600 bg-white rounded-full p-2 shadow-sm border border-slate-200 transition-colors"
+                        title="Supprimer"
+                      >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
