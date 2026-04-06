@@ -439,6 +439,8 @@ function DashboardContent() {
   useEffect(() => {
     const unsubMembers = onSnapshot(collection(db, 'members'), (snap) => {
       setStats(prev => ({ ...prev, members: snap.size }));
+    }, (err) => {
+      console.error("Dashboard error fetching members count:", err);
     });
     
     const unsubEvents = onSnapshot(query(collection(db, 'events'), where('status', '==', 'validé')), (snap) => {

@@ -24,6 +24,7 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
   const { userData } = useAuth();
   const [documents, setDocuments] = useState<AdminDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,11 +66,26 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
       const relevantStatic = staticDocuments[type] || [];
       setDocuments([...dbDocs, ...relevantStatic]);
       setLoading(false);
-    }, (error) => {
-      console.warn("Firestore error (normal if no DB yet):", error.message);
-      // Fallback only to static if DB fails or is empty
-      setDocuments(staticDocuments[type] || []);
-      setLoading(false);
+      setError(null);
+    }, (err: any) => {
+      console.warn("Firestore error in AdminDocumentsList:", err);
+      if (err.code === 'failed-precondition') {
+        const qSimple = query(
+          collection(db, 'adminDocuments'),
+          where('type', '==', type)
+        );
+        onSnapshot(qSimple, (snapshot) => {
+          const dbDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AdminDocument[];
+          setDocuments([...dbDocs, ...(staticDocuments[type] || [])]);
+          setLoading(false);
+          setError("Note: Tri désactivé (Index Firestore manquant).");
+        });
+      } else {
+        // Fallback only to static if DB fails or is empty
+        setDocuments(staticDocuments[type] || []);
+        setError(err.message);
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();
@@ -205,6 +221,15 @@ export default function AdminDocumentsList({ type, title }: AdminDocumentsListPr
 
   return (
     <div>
+      {error && (
+        <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-2xl flex items-center gap-3 text-error">
+          <span className="material-symbols-outlined">error</span>
+          <div className="flex-1 text-xs">
+            <p className="font-bold">Erreur de récupération :</p>
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold text-slate-800">{title}</h3>
         {userData?.role !== 'client' && (

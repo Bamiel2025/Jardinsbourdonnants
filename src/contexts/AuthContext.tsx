@@ -87,11 +87,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             createdAt: userDoc.exists() ? userDoc.data().createdAt : serverTimestamp(),
           };
 
-          if (!userDoc.exists() || userDoc.data().role !== currentRole) {
-            await setDoc(doc(db, 'users', currentUser.uid), finalUserData, { merge: true });
+          try {
+            if (!userDoc.exists() || userDoc.data().role !== currentRole) {
+              await setDoc(doc(db, 'users', currentUser.uid), finalUserData, { merge: true });
+            }
+          } catch (err) {
+            console.warn("Could not sync user role to Firestore (normal if rules restrict it):", err);
           }
           
-          setUserData(finalUserData as unknown as UserData);
+          setUserData(finalUserData as any);
           setLoading(false);
         }, (error) => {
           console.error("Error fetching user data snapshot:", error);

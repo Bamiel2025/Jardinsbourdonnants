@@ -17,6 +17,7 @@ export default function BoardMembersList() {
   const { userData } = useAuth();
   const [members, setMembers] = useState<BoardMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<BoardMember | null>(null);
   
@@ -48,9 +49,20 @@ export default function BoardMembersList() {
       
       setMembers(membersData);
       setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'boardMembers');
-      setLoading(false);
+      setError(null);
+    }, (err: any) => {
+      console.error("Firestore error in BoardMembersList:", err);
+      if (err.code === 'failed-precondition') {
+        onSnapshot(query(collection(db, 'boardMembers')), (snapshot) => {
+          setMembers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as BoardMember[]);
+          setLoading(false);
+          setError("Note: Tri désactivé (Index Firestore manquant).");
+        });
+      } else {
+        handleFirestoreError(err, OperationType.LIST, 'boardMembers');
+        setError(err.message);
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();
@@ -123,6 +135,15 @@ export default function BoardMembersList() {
 
   return (
     <div>
+      {error && (
+        <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-2xl flex items-center gap-3 text-error">
+          <span className="material-symbols-outlined">error</span>
+          <div className="flex-1 text-xs">
+            <p className="font-bold">Erreur de récupération :</p>
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold text-slate-800">Membres du bureau</h3>
         {userData?.role !== 'client' && (

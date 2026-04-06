@@ -9,6 +9,8 @@ import autoTable from 'jspdf-autotable';
 export default function MembersList() {
   const { userData } = useAuth();
   const [members, setMembers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -97,6 +99,22 @@ export default function MembersList() {
     const q = query(collection(db, 'members'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setMembers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+      setError(null);
+    }, (err: any) => {
+      console.error("Firestore error in MembersList:", err);
+      // Fallback: if it's an index error, try without orderBy
+      if (err.code === 'failed-precondition') {
+        const qSimple = query(collection(db, 'members'));
+        onSnapshot(qSimple, (snapshot) => {
+          setMembers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+          setLoading(false);
+          setError("Note: Tri désactivé (Index Firestore manquant).");
+        });
+      } else {
+        setError(err.message);
+        setLoading(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -428,7 +446,26 @@ export default function MembersList() {
         </div>
       </div>
 
-      <div id="members-table-container" className="flex-1 bg-surface-container-lowest rounded-3xl shadow-sm border border-outline-variant/20 overflow-hidden flex flex-col">
+      <div id="members-table-container" className="flex-1 bg-surface-container-lowest rounded-3xl shadow-sm border border-outline-variant/20 overflow-hidden flex flex-col relative">
+        {loading && (
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+              <p className="text-sm font-medium text-on-surface-variant">Chargement des membres...</p>
+            </div>
+          </div>
+        )}
+        
+        {error && !loading && (
+          <div className="p-4 m-4 bg-error/10 border border-error/20 rounded-2xl flex items-center gap-3 text-error">
+            <span className="material-symbols-outlined">error</span>
+            <div className="flex-1 text-xs">
+              <p className="font-bold">Erreur de récupération :</p>
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
