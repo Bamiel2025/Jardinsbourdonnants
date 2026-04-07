@@ -70,6 +70,7 @@ export default function CreateModal({ isOpen, onClose, defaultTab = 'event' }: C
           status: 'en attente de validation',
           startDate: Timestamp.fromDate(resDate),
           endDate: Timestamp.fromDate(resEndDate),
+          userId: userData?.uid || null,
           createdAt: serverTimestamp()
         });
       } else if (activeTab === 'quote' || activeTab === 'invoice') {
