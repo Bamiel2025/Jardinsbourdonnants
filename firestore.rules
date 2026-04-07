@@ -205,10 +205,9 @@ service cloud.firestore {
     }
 
     match /reservations/{reservationId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidReservation(request.resource.data);
-      allow update: if isAuthenticated() && isValidReservation(request.resource.data) &&
-                    ((resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId && request.resource.data.status in ['pending', 'cancelled']) || isAdmin());
+      allow read: if true;
+      allow create: if true;
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
