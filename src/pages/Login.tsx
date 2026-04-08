@@ -37,7 +37,7 @@ export default function Login() {
           });
         }
       } catch (e) {
-        console.error("Firestore Error (settings/accessCodes):", e);
+        console.error("Erreur lors de la récupération des codes d'accès:", e);
       }
     };
     fetchCodes();
@@ -71,8 +71,8 @@ export default function Login() {
       setRucherSuccess(true);
       setShowRucherRegistration(false);
     } catch (err: any) {
-      console.error("Firestore Error (rucher_visits_2026 create):", err);
-      setError("Erreur lors de l'inscription. Détail: " + (err.message || "Permission refusée"));
+      console.error(err);
+      setError("Erreur lors de l'inscription.");
     } finally {
       setRucherSubmitting(false);
     }
@@ -132,7 +132,7 @@ export default function Login() {
           }
         }
       } catch (e) {
-        console.warn("Firestore Warning (members query): Permission denied. This might be normal for new users.", e);
+        console.warn("Permission denied to read members collection. Fallback to existing user document role or hardcoded emails.", e);
       }
 
       // Check existing user doc to not downgrade existing admins/superadmins who choose another profile

@@ -274,7 +274,7 @@ service cloud.firestore {
 
     match /rucher_visits_2026/{visitId} {
       allow read: if isAdmin();
-      allow create: if true;
+      allow create: if isValidRucherVisit(request.resource.data);
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }

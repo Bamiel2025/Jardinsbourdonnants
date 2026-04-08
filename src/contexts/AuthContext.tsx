@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserData(finalUserData as any);
           setLoading(false);
         }, (error) => {
-          console.error(`Firestore Error (users/${currentUser.uid} snapshot):`, error);
+          console.error("Error fetching user data snapshot:", error);
           setLoading(false);
         });
       } else {
