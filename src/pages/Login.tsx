@@ -398,8 +398,8 @@ export default function Login() {
                     <input required type="tel" value={rucherForm.telephone} onChange={e => setRucherForm({...rucherForm, telephone: e.target.value})} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container focus:ring-2 focus:ring-primary outline-none" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold mb-1 text-on-surface">Email</label>
-                    <input required type="email" value={rucherForm.email} onChange={e => setRucherForm({...rucherForm, email: e.target.value})} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container focus:ring-2 focus:ring-primary outline-none" />
+                    <label className="block text-sm font-bold mb-1 text-on-surface">Email (optionnel)</label>
+                    <input type="email" value={rucherForm.email} onChange={e => setRucherForm({...rucherForm, email: e.target.value})} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container focus:ring-2 focus:ring-primary outline-none" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

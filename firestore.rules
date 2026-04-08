@@ -173,6 +173,17 @@ service cloud.firestore {
              data.createdAt is timestamp;
     }
 
+    function isValidRucherVisit(data) {
+      return hasRequiredFields(['nom', 'telephone', 'adultes', 'enfants', 'heure', 'status', 'createdAt']) &&
+             data.nom is string && data.nom.size() > 0 && data.nom.size() < 100 &&
+             data.telephone is string && data.telephone.size() > 0 && data.telephone.size() < 30 &&
+             (!('email' in data) || data.email == null || data.email == "" || (data.email is string && isValidEmail(data.email))) &&
+             data.adultes is number && data.adultes >= 0 && data.adultes <= 10 &&
+             data.enfants is number && data.enfants >= 0 && data.enfants <= 10 &&
+             data.heure is string && data.status in ['validé', 'en cours de validation', 'proposition session suivante'] &&
+             data.createdAt is timestamp;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -258,6 +269,13 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAdmin() && isValidAdminDocument(request.resource.data);
       allow update: if isAdmin() && isValidAdminDocument(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /rucher_visits_2026/{visitId} {
+      allow read: if isAdmin();
+      allow create: if isValidRucherVisit(request.resource.data);
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
   }
