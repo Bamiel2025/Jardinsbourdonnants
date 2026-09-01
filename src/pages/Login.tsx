@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { auth, googleProvider, db } from '../lib/firebase';
 import { signInWithPopup } from 'firebase/auth';
-import { doc, getDoc, getDocs, collection, query, where, setDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, query, where, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Login() {
   const { user, impersonate } = useAuth();
@@ -19,11 +19,7 @@ export default function Login() {
   const [showTestMode, setShowTestMode] = useState(false);
   const [testEmail, setTestEmail] = useState('');
 
-  // Rucher Registration State
-  const [showRucherRegistration, setShowRucherRegistration] = useState(false);
-  const [rucherForm, setRucherForm] = useState({ nom: '', telephone: '', email: '', adultes: 1, enfants: 0, heure: '9h30' });
-  const [rucherSubmitting, setRucherSubmitting] = useState(false);
-  const [rucherSuccess, setRucherSuccess] = useState(false);
+
 
   useEffect(() => {
     const fetchCodes = async () => {
@@ -50,33 +46,7 @@ export default function Login() {
     }
   }, [user, isLoading, navigate]);
 
-  const handleRucherSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (rucherForm.adultes + rucherForm.enfants > 20) {
-      setError("Le nombre maximum est de 20 participants par visite (10 adultes + 10 enfants).");
-      return;
-    }
-    if (rucherForm.adultes > 10 || rucherForm.enfants > 10) {
-      setError("Maximum 10 adultes et 10 enfants par groupe.");
-      return;
-    }
-    setRucherSubmitting(true);
-    setError('');
-    try {
-      await addDoc(collection(db, 'rucher_visits_2026'), {
-        ...rucherForm,
-        status: 'en cours de validation',
-        createdAt: serverTimestamp()
-      });
-      setRucherSuccess(true);
-      setShowRucherRegistration(false);
-    } catch (err: any) {
-      console.error(err);
-      setError("Erreur lors de l'inscription.");
-    } finally {
-      setRucherSubmitting(false);
-    }
-  };
+
 
   const profiles = [
     { id: 'superadmin', label: 'Superadministrateur', icon: 'shield_person', color: 'bg-purple-100 text-purple-800 border-purple-300' },
@@ -348,16 +318,8 @@ export default function Login() {
         </div>
 
         <div className="mt-8 pt-8 border-t border-outline-variant/20 flex flex-col gap-4">
-          <button
-            onClick={() => setShowRucherRegistration(true)}
-            className="w-full bg-amber-400 text-amber-900 py-4 rounded-xl font-bold hover:bg-amber-500 transition-colors shadow-sm flex items-center justify-center gap-2"
-          >
-            <span className="material-symbols-outlined">hive</span>
-            Inscription Journée aux Jardins Bourdonnants (7 Juin 2026)
-          </button>
-
           <a 
-            href="https://www.helloasso.com/associations/les-jardins-bourdonnants" 
+            href="https://www.helloasso.com/associations/les-jardins-bourdonnants/adhesions" 
             target="_blank" 
             rel="noopener noreferrer"
             className="w-full bg-[#00A388] text-white py-4 rounded-xl font-bold hover:bg-[#008f77] transition-colors shadow-sm flex items-center justify-center gap-2"
@@ -367,96 +329,6 @@ export default function Login() {
           </a>
         </div>
       </div>
-
-      {showRucherRegistration && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-surface-container-lowest rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="p-6 border-b border-outline-variant/20 flex justify-between items-center bg-amber-100">
-              <h2 className="text-xl font-bold text-amber-900 flex items-center gap-2">
-                <span className="material-symbols-outlined">event</span>
-                Visite du 7 Juin 2026
-              </h2>
-              <button onClick={() => setShowRucherRegistration(false)} className="text-amber-900 hover:bg-amber-200 p-2 rounded-full transition-colors cursor-pointer">
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto">
-              <p className="text-sm text-on-surface-variant mb-6 bg-surface-container p-4 rounded-xl">
-                Inscrivez-vous pour la visite de la ruche pédagogique (5€ par personne, sur place). <br/>
-                <b>Attention :</b> Groupes limités à 10 adultes et 10 enfants par tranche horaire.
-              </p>
-
-              <form onSubmit={handleRucherSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold mb-1 text-on-surface">Nom / Prénom</label>
-                  <input required type="text" value={rucherForm.nom} onChange={e => setRucherForm({...rucherForm, nom: e.target.value})} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container focus:ring-2 focus:ring-primary outline-none" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold mb-1 text-on-surface">Téléphone</label>
-                    <input required type="tel" value={rucherForm.telephone} onChange={e => setRucherForm({...rucherForm, telephone: e.target.value})} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container focus:ring-2 focus:ring-primary outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold mb-1 text-on-surface">Email (optionnel)</label>
-                    <input type="email" value={rucherForm.email} onChange={e => setRucherForm({...rucherForm, email: e.target.value})} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container focus:ring-2 focus:ring-primary outline-none" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold mb-1 text-on-surface">Adultes (Max 10)</label>
-                    <input required type="number" min="0" max="10" value={rucherForm.adultes} onChange={e => setRucherForm({...rucherForm, adultes: parseInt(e.target.value) || 0})} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container focus:ring-2 focus:ring-primary outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold mb-1 text-on-surface">Enfants (Max 10)</label>
-                    <input required type="number" min="0" max="10" value={rucherForm.enfants} onChange={e => setRucherForm({...rucherForm, enfants: parseInt(e.target.value) || 0})} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container focus:ring-2 focus:ring-primary outline-none" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold mb-1 text-on-surface">Plage horaire</label>
-                  <select value={rucherForm.heure} onChange={e => setRucherForm({...rucherForm, heure: e.target.value})} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container focus:ring-2 focus:ring-primary outline-none cursor-pointer">
-                    <option value="9h30">9h30</option>
-                    <option value="10h30">10h30</option>
-                    <option value="11h30">11h30</option>
-                    <option value="14h30">14h30</option>
-                    <option value="15h30">15h30</option>
-                    <option value="16h30">16h30</option>
-                  </select>
-                </div>
-
-                <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex justify-between items-center">
-                  <span className="text-amber-900 font-bold">Total à régler sur place :</span>
-                  <span className="text-xl font-black text-amber-900">{(rucherForm.adultes + rucherForm.enfants) * 5} €</span>
-                </div>
-                
-                {error && (
-                  <div className="p-3 bg-red-100 text-red-800 rounded-xl text-sm font-bold animate-in fade-in">
-                    {error}
-                  </div>
-                )}
-
-                <button 
-                  type="submit" 
-                  disabled={rucherSubmitting}
-                  className="w-full bg-amber-400 text-amber-900 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-amber-500 transition-colors disabled:opacity-50 mt-6"
-                >
-                  {rucherSubmitting ? 'Envoi en cours...' : 'Valider mon inscription'}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {rucherSuccess && (
-        <div className="fixed top-4 right-4 z-50 bg-inverse-surface text-inverse-on-surface px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
-          <span className="material-symbols-outlined text-amber-400">check_circle</span>
-          <p className="font-medium">Inscription envoyée ! Paimement de 5€/personne sur place.</p>
-          <button onClick={() => setRucherSuccess(false)} className="ml-4 text-inverse-on-surface/70 hover:text-white">
-            <span className="material-symbols-outlined text-sm">close</span>
-          </button>
-        </div>
-      )}
 
     </div>
   );
