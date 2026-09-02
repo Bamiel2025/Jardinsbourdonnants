@@ -317,17 +317,6 @@ export default function Login() {
           )}
         </div>
 
-        <div className="mt-8 pt-8 border-t border-outline-variant/20 flex flex-col gap-4">
-          <a 
-            href="https://www.helloasso.com/associations/les-jardins-bourdonnants/adhesions" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-full bg-[#00A388] text-white py-4 rounded-xl font-bold hover:bg-[#008f77] transition-colors shadow-sm flex items-center justify-center gap-2"
-          >
-            <span className="material-symbols-outlined">favorite</span>
-            S'inscrire à l'association via HelloAsso
-          </a>
-        </div>
       </div>
 
     </div>
