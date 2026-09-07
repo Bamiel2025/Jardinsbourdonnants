@@ -16,6 +16,35 @@ import { fr } from 'date-fns/locale';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+/** Météo : code WMO Open-Meteo -> icône + libellé. */
+function getWeatherMeta(code: number | null | undefined): { icon: string; label: string } {
+  const map: Record<number, { icon: string; label: string }> = {
+    0: { icon: 'sunny', label: 'Ciel dégagé — idéal pour le butinage' },
+    1: { icon: 'sunny', label: 'Plutôt ensoleillé' },
+    2: { icon: 'partly_cloudy_day', label: 'Peu nuageux' },
+    3: { icon: 'cloud', label: 'Couvert' },
+    45: { icon: 'foggy', label: 'Brouillard' },
+    48: { icon: 'foggy', label: 'Brouillard givrant' },
+    51: { icon: 'rainy', label: 'Bruine légère' },
+    53: { icon: 'rainy', label: 'Bruine' },
+    55: { icon: 'rainy', label: 'Bruine dense' },
+    61: { icon: 'rainy', label: 'Pluie faible' },
+    63: { icon: 'rainy', label: 'Pluie' },
+    65: { icon: 'rainy_heavy', label: 'Forte pluie' },
+    71: { icon: 'ac_unit', label: 'Neige faible' },
+    73: { icon: 'ac_unit', label: 'Neige' },
+    75: { icon: 'ac_unit', label: 'Forte neige' },
+    80: { icon: 'rainy', label: 'Averses' },
+    81: { icon: 'rainy', label: 'Averses' },
+    82: { icon: 'rainy_heavy', label: 'Fortes averses' },
+    95: { icon: 'thunderstorm', label: 'Orage' },
+    96: { icon: 'thunderstorm', label: 'Orage avec grêle' },
+    99: { icon: 'thunderstorm', label: 'Orage violent' },
+  };
+  if (code === null || code === undefined) return { icon: 'cloud', label: 'Météo du rucher' };
+  return map[code] || { icon: 'cloud', label: 'Conditions variables' };
+}
+
 /** Type d'action de l'agenda -> libellé + couleur (palette existante + violet réunions). */
 const AGENDA_TYPE_META: Record<string, { label: string; color: string }> = {
   event:               { label: 'Événement',        color: '#3b82f6' }, // bleu
@@ -444,6 +473,7 @@ function DashboardContent() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [weather, setWeather] = useState<any>(null);
 
   useEffect(() => {
     const unsubMembers = onSnapshot(collection(db, 'members'), (snap) => {
@@ -509,6 +539,31 @@ function DashboardContent() {
       unsubMeetings();
       unsubQuotes();
     };
+  }, []);
+
+  // Météo temps réel du rucher (Open-Meteo, gratuit, sans clé, CORS ouvert) — Auriol.
+  useEffect(() => {
+    const controller = new AbortController();
+    const url =
+      'https://api.open-meteo.com/v1/forecast?latitude=43.33&longitude=5.67' +
+      '&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code';
+    fetch(url, { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        const c = data?.current;
+        if (c) {
+          setWeather({
+            temp: typeof c.temperature_2m === 'number' ? Math.round(c.temperature_2m) : null,
+            humidity: typeof c.relative_humidity_2m === 'number' ? c.relative_humidity_2m : null,
+            wind: typeof c.wind_speed_10m === 'number' ? c.wind_speed_10m : null,
+            code: typeof c.weather_code === 'number' ? c.weather_code : null,
+          });
+        }
+      })
+      .catch(() => {
+        /* en cas d'échec réseau, on garde le placeholder */
+      });
+    return () => controller.abort();
   }, []);
 
   const agendaItems = events
@@ -616,16 +671,25 @@ function DashboardContent() {
           <h3 className="text-2xl font-bold text-primary flex items-center gap-2">
             <span className="material-symbols-outlined">cloud</span>
             Météo du Rucher
+            <span className="ml-auto text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant/70">Auriol · temps réel</span>
           </h3>
           <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-2xl border border-blue-200 dark:border-blue-800 flex flex-col items-center">
-            <span className="material-symbols-outlined text-6xl text-blue-500 animate-pulse">sunny</span>
+            <span className={`material-symbols-outlined text-6xl text-blue-500 ${weather ? 'animate-pulse' : 'opacity-40'}`}>
+              {getWeatherMeta(weather?.code)?.icon}
+            </span>
             <div className="text-center mt-4">
-              <span className="text-4xl font-black text-on-surface">18°C</span>
-              <p className="text-on-surface-variant font-medium">Grand Soleil - Idéal pour le butinage</p>
+              <span className="text-4xl font-black text-on-surface">
+                {weather?.temp != null ? `${weather.temp}°C` : '—'}
+              </span>
+              <p className="text-on-surface-variant font-medium">{getWeatherMeta(weather?.code)?.label}</p>
             </div>
             <div className="w-full mt-6 grid grid-cols-2 gap-2 text-xs text-center font-bold">
-              <div className="bg-white/50 dark:bg-black/20 p-2 rounded-lg">Humidité: 45%</div>
-              <div className="bg-white/50 dark:bg-black/20 p-2 rounded-lg">Vent: 10km/h</div>
+              <div className="bg-white/50 dark:bg-black/20 p-2 rounded-lg">
+                Humidité: {weather?.humidity != null ? `${weather.humidity}%` : '—'}
+              </div>
+              <div className="bg-white/50 dark:bg-black/20 p-2 rounded-lg">
+                Vent: {weather?.wind != null ? `${Math.round(weather.wind)} km/h` : '—'}
+              </div>
             </div>
           </div>
           
