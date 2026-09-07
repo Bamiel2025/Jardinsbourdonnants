@@ -11,10 +11,19 @@ import GardenManagement from '../components/GardenManagement';
 import Settings from '../components/Settings';
 import EventsList from '../components/EventsList';
 import AdministrationPanel from '../components/AdministrationPanel';
-import { format, addDays, startOfWeek, isSameDay, subWeeks, addWeeks, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth } from 'date-fns';
+import { format, addMonths, subMonths, isSameMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+
+/** Type d'action de l'agenda -> libellé + couleur (palette existante + violet réunions). */
+const AGENDA_TYPE_META: Record<string, { label: string; color: string }> = {
+  event:               { label: 'Événement',        color: '#3b82f6' }, // bleu
+  reservation_rucher:  { label: 'Animation Rucher',  color: '#f59e0b' }, // ambre
+  reservation_jardin:  { label: 'Animation Jardin',  color: '#84cc16' }, // vert
+  meeting:             { label: 'Réunion',           color: '#a855f7' }, // violet
+};
+
 
 export default function AdminDashboard() {
   const { userData, logout } = useAuth();
@@ -450,14 +459,14 @@ function DashboardContent() {
         let start = new Date();
         if (data.startDate?.toDate) start = data.startDate.toDate();
         else if (data.startDate) start = new Date(data.startDate);
-        
+
         if (isNaN(start.getTime())) start = new Date();
-        
-        return { id: doc.id, date: start, type: 'event' };
+
+        return { id: doc.id, date: start, type: 'event', lieu: data.location || data.lieu || '' };
       });
       setEvents(prev => [...prev.filter(e => e.type !== 'event'), ...fetchedEvents]);
     });
-    
+
     const unsubReservations = onSnapshot(query(collection(db, 'reservations'), where('status', '==', 'validé')), (snap) => {
       setStats(prev => ({ ...prev, reservations: snap.size }));
       const fetchedReservations = snap.docs.map(doc => {
@@ -466,15 +475,29 @@ function DashboardContent() {
         if (data.startDate?.toDate) start = data.startDate.toDate();
         else if (data.startDate) start = new Date(data.startDate);
         else if (data.createdAt?.toDate) start = data.createdAt.toDate();
-        
+
         if (isNaN(start.getTime())) start = new Date();
-        
+
         const location = data.locationChoice || 'rucher';
-        return { id: doc.id, date: start, type: `reservation_${location}` };
+        return { id: doc.id, date: start, type: `reservation_${location}`, lieu: location === 'rucher' ? 'Rucher' : 'Jardin' };
       });
       setEvents(prev => [...prev.filter(e => !e.type?.startsWith('reservation')), ...fetchedReservations]);
     });
-    
+
+    const unsubMeetings = onSnapshot(collection(db, 'meetings'), (snap) => {
+      const fetchedMeetings = snap.docs.map(doc => {
+        const data = doc.data();
+        let start = new Date();
+        if (data.startDate?.toDate) start = data.startDate.toDate();
+        else if (data.startDate) start = new Date(data.startDate);
+
+        if (isNaN(start.getTime())) start = new Date();
+
+        return { id: doc.id, date: start, type: 'meeting', lieu: data.location || data.lieu || '' };
+      });
+      setEvents(prev => [...prev.filter(e => e.type === 'meeting'), ...fetchedMeetings]);
+    });
+
     const unsubQuotes = onSnapshot(query(collection(db, 'quotes'), where('status', '==', 'pending')), (snap) => {
       setStats(prev => ({ ...prev, quotes: snap.size }));
     });
@@ -483,19 +506,17 @@ function DashboardContent() {
       unsubMembers();
       unsubEvents();
       unsubReservations();
+      unsubMeetings();
       unsubQuotes();
     };
   }, []);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(monthStart);
-  const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const endDate = addDays(startOfWeek(monthEnd, { weekStartsOn: 1 }), 6);
-  const dateFormat = "d";
-  const days = eachDayOfInterval({ start: startDate, end: endDate });
+  const agendaItems = events
+    .filter((e) => isSameMonth(e.date, currentMonth))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  const nextMonth = () => setCurrentMonth(addWeeks(currentMonth, 4));
-  const prevMonth = () => setCurrentMonth(subWeeks(currentMonth, 4));
+  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
 
   return (
     <div className={isFullscreen ? 'fixed inset-0 z-[100] bg-surface-container-lowest p-8 flex flex-col h-screen overflow-auto' : 'p-8 max-w-[1600px] mx-auto w-full space-y-8 relative'}>
@@ -627,77 +648,69 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Mini Agenda */}
+      {/* Agenda du tableau de bord — onglets colorés */}
       <div className="bg-surface-container-lowest p-6 rounded-3xl shadow-sm border border-outline-variant/20">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-wrap justify-between items-center gap-3 mb-5">
           <h3 className="text-xl font-bold font-headline text-primary flex items-center gap-2">
-            <span className="material-symbols-outlined">calendar_month</span>
+            <span className="material-symbols-outlined">view_agenda</span>
             Agenda du tableau de bord
           </h3>
-          <div className="flex items-center gap-4">
-            <button onClick={prevMonth} className="p-2 hover:bg-surface-container-high rounded-full transition-colors">
+          <div className="flex items-center gap-2">
+            <button onClick={prevMonth} className="p-2 hover:bg-surface-container-high rounded-full transition-colors" title="Mois précédent">
               <span className="material-symbols-outlined">chevron_left</span>
             </button>
-            <span className="font-bold text-on-surface capitalize">{format(currentMonth, 'MMMM yyyy', { locale: fr })}</span>
-            <button onClick={nextMonth} className="p-2 hover:bg-surface-container-high rounded-full transition-colors">
+            <span className="font-bold text-on-surface capitalize min-w-[150px] text-center">{format(currentMonth, 'MMMM yyyy', { locale: fr })}</span>
+            <button onClick={nextMonth} className="p-2 hover:bg-surface-container-high rounded-full transition-colors" title="Mois suivant">
               <span className="material-symbols-outlined">chevron_right</span>
             </button>
           </div>
         </div>
-        
-        <div className="grid grid-cols-7 gap-2 mb-2">
-          {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(day => (
-            <div key={day} className="text-center text-xs font-bold text-on-surface-variant uppercase tracking-wider py-2">
-              {day}
+
+        {/* Légende des couleurs */}
+        <div className="flex flex-wrap gap-x-4 gap-y-2 mb-5">
+          {Object.values(AGENDA_TYPE_META).map((m) => (
+            <div key={m.label} className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: m.color }} aria-hidden="true" />
+              <span className="text-xs font-medium text-on-surface-variant">{m.label}</span>
             </div>
           ))}
         </div>
-        
-        <div className="grid grid-cols-7 gap-2">
-          {days.map((day, i) => {
-            const dayEvents = events.filter(e => isSameDay(e.date, day));
-            const isCurrentMonth = isSameMonth(day, monthStart);
-            
-            return (
-              <div 
-                key={i} 
-                className={`min-h-[80px] p-2 rounded-xl border ${isToday(day) ? 'border-primary bg-primary/5' : 'border-outline-variant/20 bg-surface-container-low'} ${!isCurrentMonth ? 'opacity-40' : ''}`}
-              >
-                <div className={`text-sm font-bold mb-1 ${isToday(day) ? 'text-primary' : 'text-on-surface'}`}>
-                  {format(day, dateFormat)}
+
+        {/* Liste des actions sous forme d'onglets colorés */}
+        {agendaItems.length === 0 ? (
+          <div className="py-10 flex flex-col items-center gap-2 text-center text-on-surface-variant">
+            <span className="material-symbols-outlined text-4xl opacity-20">event_busy</span>
+            <p className="text-sm italic">Aucune action programmée ce mois-ci.</p>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {agendaItems.map((item) => {
+              const meta = AGENDA_TYPE_META[item.type] || AGENDA_TYPE_META.event;
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 rounded-2xl border p-3 sm:p-4 transition-transform duration-200 hover:-translate-y-0.5"
+                  style={{ borderColor: `${meta.color}55`, backgroundColor: `${meta.color}14` }}
+                >
+                  <span className="w-2.5 self-stretch rounded-full shrink-0" style={{ backgroundColor: meta.color }} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold leading-tight" style={{ color: meta.color }}>{meta.label}</p>
+                    {item.lieu ? (
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-on-surface-variant">
+                        <span className="material-symbols-outlined text-[14px]">place</span>
+                        {item.lieu}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-headline text-2xl font-extrabold leading-none text-on-surface">{format(item.date, 'd', { locale: fr })}</p>
+                    <p className="mt-1 text-[11px] uppercase tracking-wide text-on-surface-variant">{format(item.date, 'MMM yyyy', { locale: fr })}</p>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {dayEvents.map((e, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`w-3 h-3 rounded-full ${
-                        e.type === 'event' ? 'bg-blue-500' : 
-                        e.type === 'reservation_rucher' ? 'bg-amber-500' : 
-                        'bg-lime-500'
-                      }`}
-                      title={e.type === 'event' ? 'Événement' : e.type === 'reservation_rucher' ? 'Animation Rucher' : 'Animation Jardin'}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        
-        <div className="flex gap-4 mt-6 pt-4 border-t border-outline-variant/20">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-            <span className="text-xs font-medium text-on-surface-variant">Événement</span>
+              );
+            })}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-            <span className="text-xs font-medium text-on-surface-variant">Animation Rucher</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-lime-500"></div>
-            <span className="text-xs font-medium text-on-surface-variant">Animation Jardin</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
