@@ -52,10 +52,68 @@
   --font-headline: "Manrope", sans-serif;
   --font-body: "Inter", sans-serif;
   --font-label: "Inter", sans-serif;
+  --font-display: "Fraunces", "Manrope", Georgia, serif;
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body {
   font-family: var(--font-body);
+}
+
+/* ===== Page d'accueil — primitives d'animation ===== */
+
+@keyframes jb-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes jb-rise {
+  from { opacity: 0; transform: translate3d(0, 28px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes jb-drift {
+  from { transform: translate3d(-12vw, 0, 0); }
+  to   { transform: translate3d(112vw, 0, 0); }
+}
+
+@keyframes jb-bob {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-5deg); }
+  50%      { transform: translate3d(0, -16px, 0) rotate(5deg); }
+}
+
+.jb-marquee {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+.jb-marquee-track {
+  animation: jb-marquee 42s linear infinite;
+  will-change: transform;
+}
+
+.jb-marquee:hover .jb-marquee-track,
+.jb-marquee:focus-within .jb-marquee-track {
+  animation-play-state: paused;
+}
+
+/* Reveal au défilement (la classe .is-in est posée par l'observeur) */
+.jb-reveal { opacity: 0; }
+.jb-reveal.is-in { animation: jb-rise 0.75s var(--ease-out-expo) forwards; }
+
+.jb-drift { animation: jb-drift 26s linear infinite; }
+.jb-bob   { animation: jb-bob 3.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .jb-marquee-track,
+  .jb-drift,
+  .jb-bob {
+    animation: none !important;
+  }
+  .jb-reveal { opacity: 1 !important; }
+  .jb-bee { display: none; }
 }
 
 h1, h2, h3, .font-headline {
