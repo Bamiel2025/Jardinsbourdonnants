@@ -516,7 +516,7 @@ function DashboardContent() {
         const rawType = typeof data.type === 'string' ? data.type : '';
         const calType = KNOWN_EVENT_TYPES.includes(rawType) ? `event_${rawType}` : 'event';
 
-        return { id: doc.id, date: start, type: calType, lieu: data.location || data.lieu || '' };
+        return { id: doc.id, date: start, type: calType, title: data.title || 'Événement', lieu: data.location || data.lieu || '' };
       });
       setEvents(prev => [...prev.filter(e => !String(e.type).startsWith('event')), ...fetchedEvents]);
     });
@@ -533,7 +533,7 @@ function DashboardContent() {
         if (isNaN(start.getTime())) start = new Date();
 
         const location = data.locationChoice || 'rucher';
-        return { id: doc.id, date: start, type: `reservation_${location}`, lieu: location === 'rucher' ? 'Rucher' : 'Jardin' };
+        return { id: doc.id, date: start, type: `reservation_${location}`, title: data.fullName || 'Réservation', lieu: location === 'rucher' ? 'Rucher' : 'Jardin' };
       });
       setEvents(prev => [...prev.filter(e => !e.type?.startsWith('reservation')), ...fetchedReservations]);
     });
@@ -547,7 +547,7 @@ function DashboardContent() {
 
         if (isNaN(start.getTime())) start = new Date();
 
-        return { id: doc.id, date: start, type: 'meeting', lieu: data.location || data.lieu || '' };
+        return { id: doc.id, date: start, type: 'meeting', title: data.title || 'Réunion', lieu: data.location || data.lieu || '' };
       });
       setEvents(prev => [...prev.filter(e => e.type !== 'meeting'), ...fetchedMeetings]);
     });
@@ -756,8 +756,8 @@ function DashboardContent() {
 
         {/* Légende des couleurs */}
         <div className="flex flex-wrap gap-x-4 gap-y-2 mb-5">
-          {Object.values(AGENDA_TYPE_META).map((m) => (
-            <div key={m.label} className="flex items-center gap-2">
+          {Object.entries(AGENDA_TYPE_META).map(([type, m]) => (
+            <div key={type} className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: m.color }} aria-hidden="true" />
               <span className="text-xs font-medium text-on-surface-variant">{m.label}</span>
             </div>
@@ -782,7 +782,8 @@ function DashboardContent() {
                 >
                   <span className="w-2.5 self-stretch rounded-full shrink-0" style={{ backgroundColor: meta.color }} aria-hidden="true" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold leading-tight" style={{ color: meta.color }}>{meta.label}</p>
+                    <p className="font-bold leading-tight text-on-surface truncate" title={item.title}>{item.title}</p>
+                    <p className="mt-0.5 text-xs font-bold uppercase tracking-wide" style={{ color: meta.color }}>{meta.label}</p>
                     {item.lieu ? (
                       <p className="mt-0.5 flex items-center gap-1 text-xs text-on-surface-variant">
                         <span className="material-symbols-outlined text-[14px]">place</span>
