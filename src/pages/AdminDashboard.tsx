@@ -59,6 +59,18 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [forcedCreateTab, setForcedCreateTab] = useState<string | null>(null);
+
+  // Permet aux onglets (ex: Membres) d'ouvrir le modal de création sur un onglet précis
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const tab = (e as CustomEvent).detail;
+      setForcedCreateTab(typeof tab === 'string' ? tab : null);
+      setIsCreateModalOpen(true);
+    };
+    window.addEventListener('jdb:open-create', handler);
+    return () => window.removeEventListener('jdb:open-create', handler);
+  }, []);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [toastMessage, setToastMessage] = useState('');
@@ -415,14 +427,16 @@ export default function AdminDashboard() {
       )}
 
       {/* Create Modal */}
-      <CreateModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
+      <CreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => { setIsCreateModalOpen(false); setForcedCreateTab(null); }}
         defaultTab={
-          activeTab === 'events' ? 'event' :
+          (forcedCreateTab as any) ??
+          (activeTab === 'events' ? 'event' :
           activeTab === 'reservations' ? 'reservation' :
-          activeTab === 'quotes' ? 'quote' : 
-          activeTab === 'purchases' ? 'purchase' : 'event'
+          activeTab === 'quotes' ? 'quote' :
+          activeTab === 'purchases' ? 'purchase' :
+          activeTab === 'members' ? 'member' : 'event')
         }
       />
 

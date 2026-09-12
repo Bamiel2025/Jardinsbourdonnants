@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 interface CreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultTab?: 'event' | 'reservation' | 'quote' | 'invoice' | 'purchase';
+  defaultTab?: 'event' | 'reservation' | 'quote' | 'invoice' | 'purchase' | 'member';
 }
 
 export default function CreateModal({ isOpen, onClose, defaultTab = 'event' }: CreateModalProps) {
@@ -35,6 +35,19 @@ export default function CreateModal({ isOpen, onClose, defaultTab = 'event' }: C
   const [purchaseDescription, setPurchaseDescription] = useState('');
   const [purchaseQuantity, setPurchaseQuantity] = useState<number>(1);
   const [purchasePrice, setPurchasePrice] = useState('');
+
+  // New Member State
+  const [memberFullName, setMemberFullName] = useState('');
+  const [memberEmail, setMemberEmail] = useState('');
+  const [memberPhone, setMemberPhone] = useState('');
+  const [memberAddress, setMemberAddress] = useState('');
+  const [memberIsUpToDate, setMemberIsUpToDate] = useState(false);
+  const [memberAmount, setMemberAmount] = useState('');
+  const [memberActivity, setMemberActivity] = useState('');
+  const [memberRole, setMemberRole] = useState('');
+  const [memberTitle, setMemberTitle] = useState('');
+
+  const canManageMembers = userData?.role === 'admin' || userData?.role === 'superadmin';
 
   useEffect(() => {
     if (isOpen) {
@@ -94,6 +107,19 @@ export default function CreateModal({ isOpen, onClose, defaultTab = 'event' }: C
           status: 'pending',
           createdAt: serverTimestamp()
         });
+      } else if (activeTab === 'member') {
+        await addDoc(collection(db, 'members'), {
+          fullName: memberFullName.trim().substring(0, 149),
+          email: memberEmail.trim().substring(0, 149),
+          phone: memberPhone.trim().substring(0, 49),
+          address: memberAddress.trim().substring(0, 299),
+          isUpToDate: memberIsUpToDate,
+          amount: Number(memberAmount) || 0,
+          activity: memberActivity || null,
+          role: memberRole || null,
+          title: memberTitle || null,
+          createdAt: serverTimestamp()
+        });
       }
       onClose();
     } catch (error) {
@@ -119,7 +145,8 @@ export default function CreateModal({ isOpen, onClose, defaultTab = 'event' }: C
             { id: 'reservation', label: 'Réservation', icon: 'event_seat' },
             { id: 'quote', label: 'Devis', icon: 'request_quote' },
             { id: 'invoice', label: 'Facture', icon: 'receipt_long' },
-            { id: 'purchase', label: 'Demande d\'achat', icon: 'shopping_cart' }
+            { id: 'purchase', label: 'Demande d\'achat', icon: 'shopping_cart' },
+            ...(canManageMembers ? [{ id: 'member', label: 'Membre', icon: 'person_add' }] : [])
           ].map(tab => (
             <button
               key={tab.id}
@@ -240,6 +267,80 @@ export default function CreateModal({ isOpen, onClose, defaultTab = 'event' }: C
                   <div>
                     <label className="block text-sm font-bold mb-2">Prix unitaire (€)</label>
                     <input required type="number" min="0" step="0.01" value={purchasePrice} onChange={e => setPurchasePrice(e.target.value)} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" placeholder="0.00" />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'member' && (
+              <>
+                <div>
+                  <label className="block text-sm font-bold mb-2">Nom & Prénom</label>
+                  <input required type="text" value={memberFullName} onChange={e => setMemberFullName(e.target.value)} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" placeholder="Jean Dupont" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold mb-2">Email</label>
+                    <input type="email" value={memberEmail} onChange={e => setMemberEmail(e.target.value)} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" placeholder="jean@exemple.com" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-2">Téléphone</label>
+                    <input type="tel" value={memberPhone} onChange={e => setMemberPhone(e.target.value)} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" placeholder="06 12 34 56 78" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-2">Adresse</label>
+                  <textarea value={memberAddress} onChange={e => setMemberAddress(e.target.value)} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none min-h-[80px]" placeholder="Adresse postale..." />
+                </div>
+                <div className="flex flex-wrap gap-6">
+                  <label className="flex items-center gap-3 cursor-pointer p-3 border border-outline-variant/30 rounded-xl hover:bg-surface-container-low transition-colors flex-1">
+                    <input type="checkbox" checked={memberIsUpToDate} onChange={e => setMemberIsUpToDate(e.target.checked)} className="w-5 h-5 text-primary focus:ring-primary rounded" />
+                    <span className="font-bold text-sm">Cotisation à jour</span>
+                  </label>
+                  <div className="flex-1">
+                    <label className="block text-sm font-bold mb-2">Montant de la cotisation (€)</label>
+                    <input type="number" min="0" step="0.01" value={memberAmount} onChange={e => setMemberAmount(e.target.value)} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" placeholder="0.00" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-outline-variant/20">
+                  <div>
+                    <label className="block text-sm font-bold mb-2">Statut (Système)</label>
+                    <select
+                      value={memberRole}
+                      onChange={e => setMemberRole(e.target.value)}
+                      disabled={userData?.role !== 'superadmin'}
+                      className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none disabled:opacity-50"
+                    >
+                      <option value="">Adhérent (Normal)</option>
+                      <option value="admin">Administrateur</option>
+                      {userData?.role === 'superadmin' && <option value="superadmin">Superadmin</option>}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-2">Statut (Bureau)</label>
+                    <select
+                      value={memberTitle}
+                      onChange={e => setMemberTitle(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none"
+                    >
+                      <option value="">Aucun</option>
+                      <option value="president">Président(e)</option>
+                      <option value="tresorier">Trésorier(e)</option>
+                      <option value="secretaire">Secrétaire</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-2">Rôle (Activité)</label>
+                    <select
+                      value={memberActivity}
+                      onChange={e => setMemberActivity(e.target.value)}
+                      className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none"
+                    >
+                      <option value="">Aucun</option>
+                      <option value="jardinier">Jardinier</option>
+                      <option value="apiculteur">Apiculteur</option>
+                      <option value="sympathisant">Sympathisant</option>
+                    </select>
                   </div>
                 </div>
               </>

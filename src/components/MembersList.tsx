@@ -416,14 +416,14 @@ export default function MembersList() {
               className="pl-10 pr-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none w-64 transition-all"
             />
           </div>
-          {userData?.role !== 'client' && (
+          {(userData?.role === 'admin' || userData?.role === 'superadmin') && (
             <>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileUpload} 
-                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, application/vnd.oasis.opendocument.spreadsheet" 
-                className="hidden" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, application/vnd.oasis.opendocument.spreadsheet"
+                className="hidden"
               />
               <button 
                 onClick={() => setIsDeletingAll(true)}
@@ -432,6 +432,14 @@ export default function MembersList() {
                 title="Vider la liste"
               >
                 <span className="material-symbols-outlined">delete_sweep</span>
+              </button>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('jdb:open-create', { detail: 'member' }))}
+                className="px-6 py-3 rounded-xl font-bold flex items-center gap-2 bg-emerald-600 text-white shadow-md hover:bg-emerald-700 transition-colors"
+                title="Ajouter un membre"
+              >
+                <span className="material-symbols-outlined">person_add</span>
+                Ajouter un membre
               </button>
               <button 
                 onClick={triggerFileInput}
