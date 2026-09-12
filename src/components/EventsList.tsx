@@ -75,6 +75,7 @@ export default function EventsList() {
                 <thead>
                   <tr className="bg-surface-container-low text-on-surface-variant text-sm uppercase tracking-wider">
                     <th className="p-4 font-bold">Titre</th>
+                    <th className="p-4 font-bold">Type</th>
                     <th className="p-4 font-bold">Date de début</th>
                     <th className="p-4 font-bold">Date de fin</th>
                     <th className="p-4 font-bold">Toute la journée</th>
@@ -86,6 +87,19 @@ export default function EventsList() {
                   {items.map(item => (
                     <tr key={item.id} className="hover:bg-surface-container-lowest/50 transition-colors">
                       <td className="p-4 font-bold">{item.title || 'N/A'}</td>
+                      <td className="p-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                          item.type === 'reunion' ? 'bg-purple-100 text-purple-800' :
+                          item.type === 'jardin' ? 'bg-emerald-100 text-emerald-800' :
+                          item.type === 'apiculture' ? 'bg-orange-100 text-orange-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {item.type === 'reunion' ? 'Réunion' :
+                           item.type === 'jardin' ? 'Jardin' :
+                           item.type === 'apiculture' ? 'Apiculture' :
+                           item.type === 'autre' ? 'Autre' : 'Événement'}
+                        </span>
+                      </td>
                       <td className="p-4 text-sm">{item.startDate?.toDate().toLocaleString() || 'N/A'}</td>
                       <td className="p-4 text-sm">{item.endDate?.toDate().toLocaleString() || 'N/A'}</td>
                       <td className="p-4 text-sm">{item.allDay ? 'Oui' : 'Non'}</td>
@@ -137,7 +151,7 @@ export default function EventsList() {
                   ))}
                   {items.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-on-surface-variant">
+                      <td colSpan={7} className="p-8 text-center text-on-surface-variant">
                         Aucun événement trouvé.
                       </td>
                     </tr>

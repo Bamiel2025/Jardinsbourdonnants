@@ -19,6 +19,17 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
+/** Type d'événement -> libellé + couleur affiché dans l'agenda. */
+const EVENT_TYPE_META: Record<string, { label: string; emoji: string; color: string; border: string }> = {
+  event_reunion:    { label: 'Réunion',    emoji: '🤝', color: '#a855f7', border: '#7e22ce' },
+  event_jardin:     { label: 'Jardin',     emoji: '🌻', color: '#16a34a', border: '#166534' },
+  event_apiculture: { label: 'Apiculture', emoji: '🐝', color: '#ea580c', border: '#9a3412' },
+  event_autre:      { label: 'Autre',      emoji: '📅', color: '#3b82f6', border: '#1d4ed8' },
+  event:            { label: 'Événement',  emoji: '📅', color: '#3b82f6', border: '#1d4ed8' },
+};
+
+const KNOWN_EVENT_TYPES = ['reunion', 'jardin', 'apiculture', 'autre'];
+
 export default function Agenda() {
   const { userData } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
@@ -33,23 +44,31 @@ export default function Agenda() {
           const data = doc.data();
           let start = data.startDate?.toDate ? data.startDate.toDate() : (data.startDate ? new Date(data.startDate) : new Date());
           let end = data.endDate?.toDate ? data.endDate.toDate() : (data.endDate ? new Date(data.endDate) : new Date());
-          
+
           if (isNaN(start.getTime())) start = new Date();
           if (isNaN(end.getTime())) end = new Date(start.getTime() + 60 * 60 * 1000);
-          
+
+          const rawType = typeof data.type === 'string' ? data.type : '';
+          const calType = KNOWN_EVENT_TYPES.includes(rawType) ? `event_${rawType}` : 'event';
+          const meta = EVENT_TYPE_META[calType];
+
           return {
             id: doc.id,
-            title: `📅 ${data.title || 'Événement'}`,
+            title: `${meta.emoji} ${data.title || 'Événement'}`,
             start: start,
             end: end,
             allDay: data.allDay || false,
-            type: 'event',
+            type: calType,
+            typeLabel: meta.label,
+            lieu: data.location || data.lieu || '',
+            description: data.description || '',
+            collection: 'events',
             notes: data.notes || ''
           };
         });
-      
+
       setEvents(prev => {
-        const otherEvents = prev.filter(e => e.type !== 'event');
+        const otherEvents = prev.filter(e => !String(e.type).startsWith('event'));
         return [...otherEvents, ...fetchedEvents];
       });
     });
@@ -81,6 +100,10 @@ export default function Agenda() {
             end: end,
             allDay: false,
             type: `reservation_${location}`,
+            typeLabel: location === 'rucher' ? 'Animation Rucher' : 'Animation Jardin',
+            lieu: location === 'rucher' ? 'Rucher' : 'Jardin',
+            description: data.description || '',
+            collection: 'reservations',
             notes: data.notes || ''
           };
         });
@@ -107,9 +130,10 @@ export default function Agenda() {
     } else if (event.type === 'reservation_jardin') {
       backgroundColor = '#84cc16'; // lime-500
       borderColor = '#4d7c0f'; // lime-700
-    } else if (event.type === 'event') {
-      backgroundColor = '#3b82f6'; // blue-500
-      borderColor = '#1d4ed8'; // blue-700
+    } else if (typeof event.type === 'string' && event.type.startsWith('event')) {
+      const meta = EVENT_TYPE_META[event.type] || EVENT_TYPE_META.event;
+      backgroundColor = meta.color;
+      borderColor = meta.border;
     }
 
     return {
@@ -149,17 +173,17 @@ export default function Agenda() {
     if (!selectedEvent) return;
     setIsSavingNotes(true);
     try {
-      const collectionName = selectedEvent.type === 'event' ? 'events' : 'reservations';
+      const collectionName = selectedEvent.collection === 'reservations' ? 'reservations' : 'events';
       const docRef = doc(db, collectionName, selectedEvent.id);
       await updateDoc(docRef, { notes: notesContent });
-      
+
       // Update local state to reflect changes immediately
       setSelectedEvent({ ...selectedEvent, notes: notesContent });
       setEvents(prev => prev.map(e => e.id === selectedEvent.id ? { ...e, notes: notesContent } : e));
-      
+
       setIsEditingNotes(false);
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `${selectedEvent.type === 'event' ? 'events' : 'reservations'}/${selectedEvent.id}`);
+      handleFirestoreError(error, OperationType.UPDATE, `${selectedEvent.collection === 'reservations' ? 'reservations' : 'events'}/${selectedEvent.id}`);
     } finally {
       setIsSavingNotes(false);
     }
@@ -194,7 +218,7 @@ export default function Agenda() {
             <span className="material-symbols-outlined">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
           </button>
         </div>
-        <div className="flex gap-4 bg-surface-container-lowest p-3 rounded-xl shadow-sm border border-outline-variant/20">
+        <div className="flex flex-wrap gap-4 bg-surface-container-lowest p-3 rounded-xl shadow-sm border border-outline-variant/20">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-amber-500 border border-amber-700"></div>
             <span className="text-sm font-medium text-on-surface-variant">Animation Rucher</span>
@@ -204,8 +228,20 @@ export default function Agenda() {
             <span className="text-sm font-medium text-on-surface-variant">Animation Jardin</span>
           </div>
           <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#a855f7', borderColor: '#7e22ce' }}></div>
+            <span className="text-sm font-medium text-on-surface-variant">Réunion</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#16a34a', borderColor: '#166534' }}></div>
+            <span className="text-sm font-medium text-on-surface-variant">Jardin</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#ea580c', borderColor: '#9a3412' }}></div>
+            <span className="text-sm font-medium text-on-surface-variant">Apiculture</span>
+          </div>
+          <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-blue-500 border border-blue-700"></div>
-            <span className="text-sm font-medium text-on-surface-variant">Événement</span>
+            <span className="text-sm font-medium text-on-surface-variant">Autre</span>
           </div>
         </div>
       </div>
@@ -252,6 +288,18 @@ export default function Agenda() {
                 <p className="text-sm font-bold text-on-surface-variant uppercase tracking-wider mb-1">Titre</p>
                 <p className="text-lg font-medium text-on-surface">{selectedEvent.title}</p>
               </div>
+              {selectedEvent.typeLabel && (
+                <div>
+                  <p className="text-sm font-bold text-on-surface-variant uppercase tracking-wider mb-1">Type</p>
+                  <p className="text-on-surface font-medium">{selectedEvent.typeLabel}</p>
+                </div>
+              )}
+              {selectedEvent.lieu && (
+                <div>
+                  <p className="text-sm font-bold text-on-surface-variant uppercase tracking-wider mb-1">Lieu</p>
+                  <p className="text-on-surface">{selectedEvent.lieu}</p>
+                </div>
+              )}
               <div>
                 <p className="text-sm font-bold text-on-surface-variant uppercase tracking-wider mb-1">Début</p>
                 <p className="text-on-surface">{selectedEvent.start.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })}</p>

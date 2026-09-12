@@ -48,10 +48,17 @@ function getWeatherMeta(code: number | null | undefined): { icon: string; label:
 /** Type d'action de l'agenda -> libellé + couleur (palette existante + violet réunions). */
 const AGENDA_TYPE_META: Record<string, { label: string; color: string }> = {
   event:               { label: 'Événement',        color: '#3b82f6' }, // bleu
+  event_reunion:       { label: 'Réunion',         color: '#a855f7' }, // violet
+  event_jardin:        { label: 'Jardin',          color: '#16a34a' }, // vert
+  event_apiculture:    { label: 'Apiculture',      color: '#ea580c' }, // orange
+  event_autre:         { label: 'Autre',           color: '#3b82f6' }, // bleu
   reservation_rucher:  { label: 'Animation Rucher',  color: '#f59e0b' }, // ambre
   reservation_jardin:  { label: 'Animation Jardin',  color: '#84cc16' }, // vert
   meeting:             { label: 'Réunion',           color: '#a855f7' }, // violet
 };
+
+/** Types d'événements connus (champ `type` des docs `events`). */
+const KNOWN_EVENT_TYPES = ['reunion', 'jardin', 'apiculture', 'autre'];
 
 
 export default function AdminDashboard() {
@@ -506,9 +513,12 @@ function DashboardContent() {
 
         if (isNaN(start.getTime())) start = new Date();
 
-        return { id: doc.id, date: start, type: 'event', lieu: data.location || data.lieu || '' };
+        const rawType = typeof data.type === 'string' ? data.type : '';
+        const calType = KNOWN_EVENT_TYPES.includes(rawType) ? `event_${rawType}` : 'event';
+
+        return { id: doc.id, date: start, type: calType, lieu: data.location || data.lieu || '' };
       });
-      setEvents(prev => [...prev.filter(e => e.type !== 'event'), ...fetchedEvents]);
+      setEvents(prev => [...prev.filter(e => !String(e.type).startsWith('event')), ...fetchedEvents]);
     });
 
     const unsubReservations = onSnapshot(query(collection(db, 'reservations'), where('status', '==', 'validé')), (snap) => {
@@ -539,7 +549,7 @@ function DashboardContent() {
 
         return { id: doc.id, date: start, type: 'meeting', lieu: data.location || data.lieu || '' };
       });
-      setEvents(prev => [...prev.filter(e => e.type === 'meeting'), ...fetchedMeetings]);
+      setEvents(prev => [...prev.filter(e => e.type !== 'meeting'), ...fetchedMeetings]);
     });
 
     const unsubQuotes = onSnapshot(query(collection(db, 'quotes'), where('status', '==', 'pending')), (snap) => {

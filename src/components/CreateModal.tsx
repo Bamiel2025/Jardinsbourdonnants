@@ -16,6 +16,9 @@ export default function CreateModal({ isOpen, onClose, defaultTab = 'event' }: C
 
   // Event State
   const [eventTitle, setEventTitle] = useState('');
+  const [eventType, setEventType] = useState('reunion');
+  const [eventDescription, setEventDescription] = useState('');
+  const [eventLocation, setEventLocation] = useState('');
   const [eventStart, setEventStart] = useState('');
   const [eventEnd, setEventEnd] = useState('');
   
@@ -65,9 +68,13 @@ export default function CreateModal({ isOpen, onClose, defaultTab = 'event' }: C
       if (activeTab === 'event') {
         await addDoc(collection(db, 'events'), {
           title: eventTitle,
+          type: eventType,
+          description: eventDescription.trim(),
+          location: eventLocation.trim(),
           startDate: Timestamp.fromDate(new Date(eventStart)),
           endDate: Timestamp.fromDate(new Date(eventEnd)),
-          status: 'en attente de validation',
+          // Créé par un admin/superadmin : validé d'office pour apparaître aussitôt dans l'agenda
+          status: canManageMembers ? 'validé' : 'en attente de validation',
           createdBy: userData?.uid,
           createdAt: serverTimestamp()
         });
@@ -167,6 +174,25 @@ export default function CreateModal({ isOpen, onClose, defaultTab = 'event' }: C
                 <div>
                   <label className="block text-sm font-bold mb-2">Titre de l'événement</label>
                   <input required type="text" value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" placeholder="Ex: Atelier d'apiculture" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold mb-2">Type</label>
+                    <select value={eventType} onChange={e => setEventType(e.target.value)} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none cursor-pointer">
+                      <option value="reunion">Réunion</option>
+                      <option value="jardin">Jardin</option>
+                      <option value="apiculture">Apiculture (Rucher)</option>
+                      <option value="autre">Autre</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-2">Lieu</label>
+                    <input type="text" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none" placeholder="Ex: Salle des fêtes, Rucher..." />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-2">Description (optionnel)</label>
+                  <textarea value={eventDescription} onChange={e => setEventDescription(e.target.value)} className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none min-h-[80px]" placeholder="Détails de l'événement..." />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
