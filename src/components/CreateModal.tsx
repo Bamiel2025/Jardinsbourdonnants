@@ -359,13 +359,20 @@ export default function CreateModal({ isOpen, onClose, defaultTab = 'event' }: C
                     <label className="block text-sm font-bold mb-2">Rôle (Activité)</label>
                     <select
                       value={memberActivity}
-                      onChange={e => setMemberActivity(e.target.value)}
+                      onChange={e => {
+                        const v = e.target.value;
+                        setMemberActivity(v);
+                        if (v === 'adopte_abeille' && (!memberAmount || Number(memberAmount) === 0)) {
+                          setMemberAmount('5');
+                        }
+                      }}
                       className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none"
                     >
                       <option value="">Aucun</option>
                       <option value="jardinier">Jardinier</option>
                       <option value="apiculteur">Apiculteur</option>
                       <option value="sympathisant">Sympathisant</option>
+                      <option value="adopte_abeille">Adopte une abeille (5 €)</option>
                     </select>
                   </div>
                 </div>

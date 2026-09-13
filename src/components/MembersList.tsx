@@ -257,7 +257,8 @@ export default function MembersList() {
         let activity = null;
         if (activityIdx !== -1 && row[activityIdx]) {
           const val = String(row[activityIdx]).toLowerCase().trim();
-          if (val.includes('jardin')) activity = 'jardinier';
+          if (val.includes('abeille') || val.includes('adopte')) activity = 'adopte_abeille';
+          else if (val.includes('jardin')) activity = 'jardinier';
           else if (val.includes('api') || val.includes('ruche')) activity = 'apiculteur';
           else if (val.includes('sympa')) activity = 'sympathisant';
         }
@@ -365,6 +366,7 @@ export default function MembersList() {
         if (member.activity === 'jardinier') activity = 'Jardinier';
         if (member.activity === 'apiculteur') activity = 'Apiculteur';
         if (member.activity === 'sympathisant') activity = 'Sympathisant';
+        if (member.activity === 'adopte_abeille') activity = 'Adopte une abeille';
 
         return [
           member.fullName || '-',
@@ -525,6 +527,7 @@ export default function MembersList() {
                       {member.activity === 'jardinier' && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-emerald-100 text-emerald-800 border-emerald-300">Jardinier</span>}
                       {member.activity === 'apiculteur' && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-amber-100 text-amber-800 border-amber-300">Apiculteur</span>}
                       {member.activity === 'sympathisant' && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-teal-100 text-teal-800 border-teal-300">Sympathisant</span>}
+                      {member.activity === 'adopte_abeille' && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-yellow-100 text-yellow-800 border-yellow-300">Adopte une abeille</span>}
                       {!member.activity && <span className="text-on-surface-variant text-[10px] italic">-</span>}
                     </div>
                   </td>
@@ -629,8 +632,8 @@ export default function MembersList() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold mb-2">Rôle (Activité)</label>
-                    <select 
-                      value={memberToEdit.activity || ''} 
+                    <select
+                      value={memberToEdit.activity || ''}
                       onChange={e => setMemberToEdit({...memberToEdit, activity: e.target.value || null})}
                       className="w-full p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none"
                     >
@@ -638,6 +641,7 @@ export default function MembersList() {
                       <option value="jardinier">Jardinier</option>
                       <option value="apiculteur">Apiculteur</option>
                       <option value="sympathisant">Sympathisant</option>
+                      <option value="adopte_abeille">Adopte une abeille (5 €)</option>
                     </select>
                   </div>
                 </div>
